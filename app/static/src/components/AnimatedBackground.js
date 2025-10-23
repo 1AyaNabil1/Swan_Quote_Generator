@@ -72,7 +72,7 @@ const AnimatedBackground = () => {
     // Initialize particles - reduced quantity
     const initParticles = () => {
       particles = [];
-      const numberOfParticles = Math.floor((canvas.width * canvas.height) / 20000);
+      const numberOfParticles = Math.floor((canvas.width * canvas.height) / 4000);
       for (let i = 0; i < numberOfParticles; i++) {
         particles.push(new Particle());
       }
