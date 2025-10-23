@@ -13,17 +13,25 @@ const QuoteGenerator = () => {
   const handleGenerateQuote = async () => {
     setLoading(true);
     try {
+      const requestBody = {
+        category,
+        length: 'medium'
+      };
+      
+      // Only include topic and style if they have values
+      if (topic && topic.trim()) {
+        requestBody.topic = topic.trim();
+      }
+      if (style && style.trim()) {
+        requestBody.style = style.trim();
+      }
+
       const response = await fetch('http://localhost:8000/api/quotes/generate', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          category,
-          topic: topic || undefined,
-          style: style || undefined,
-          length: 'medium'
-        }),
+        body: JSON.stringify(requestBody),
       });
 
       if (!response.ok) {
