@@ -100,7 +100,7 @@ const QuoteGenerator = () => {
                 )}
                 <button 
                   onClick={handleCopyQuote}
-                  className="mt-6 px-5 py-2 bg-purple-primary/20 hover:bg-purple-primary/30 border border-purple-primary/40 rounded-lg text-white text-sm font-light transition-all" style={{ fontFamily: "'Poppins', 'Inter', sans-serif" }}
+                  className="mt-6 px-5 py-2 bg-purple-primary/20 hover:bg-purple-primary/30 border border-purple-primary/40 rounded-lg text-white text-sm font-light transition-all" style={{ fontFamily: "'Crimson Text', 'Georgia', serif" }}
                 >
                   Copy Quote
                 </button>
@@ -122,18 +122,25 @@ const QuoteGenerator = () => {
               <label className="block text-white/70 font-light mb-2 text-sm">
                 Category
               </label>
-              <select
-                value={category}
-                onChange={(e) => setCategory(e.target.value)}
-                className="w-full px-4 py-2.5 bg-black/30 border border-purple-primary/30 rounded-lg text-white text-sm focus:outline-none focus:border-purple-accent transition-all"
-                style={{ fontFamily: "'Poppins', 'Inter', sans-serif" }}
-              >
-                {categories.map(cat => (
-                  <option key={cat} value={cat} className="bg-black">
-                    {cat.charAt(0).toUpperCase() + cat.slice(1)}
-                  </option>
-                ))}
-              </select>
+              <div className="relative">
+                <select
+                  value={category}
+                  onChange={(e) => setCategory(e.target.value)}
+                  className="w-full px-4 py-2.5 pr-10 bg-black/30 border border-purple-primary/30 rounded-lg text-white text-sm focus:outline-none focus:border-purple-accent transition-all appearance-none"
+                  style={{ fontFamily: "'Poppins', 'Inter', sans-serif" }}
+                >
+                  {categories.map(cat => (
+                    <option key={cat} value={cat} className="bg-black">
+                      {cat.charAt(0).toUpperCase() + cat.slice(1)}
+                    </option>
+                  ))}
+                </select>
+                <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3">
+                  <svg className="h-4 w-4 text-white/70" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </div>
+              </div>
             </div>
 
             <div>
