@@ -55,7 +55,7 @@ class QuoteRequest(BaseModel):
 class QuoteResponse(BaseModel):
     """Response model containing the generated quote."""
     quote: str = Field(..., description="The generated quote")
-    author: str = Field(default="AI Generated", description="Author attribution")
+    author: str = Field(default="Ayō", description="Author attribution")
     category: str = Field(..., description="Category of the quote")
     timestamp: str = Field(..., description="Generation timestamp")
     
@@ -63,7 +63,7 @@ class QuoteResponse(BaseModel):
         json_schema_extra = {
             "example": {
                 "quote": "Success is not final, failure is not fatal: it is the courage to continue that counts.",
-                "author": "AI Generated",
+                "author": "Ayō",
                 "category": "motivation",
                 "timestamp": "2025-10-23T10:30:00Z"
             }
