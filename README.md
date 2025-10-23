@@ -1,8 +1,8 @@
-# AI Quote Generator 🎯
+# AI Quote Generator
 
 A powerful AI-powered quote generator built with FastAPI. Generate inspirational, motivational, and creative quotes on demand using OpenAI's GPT models.
 
-## Features ✨
+## Features
 
 - **AI-Powered Generation**: Uses Google's Gemini AI to create original, meaningful quotes
 - **Multiple Categories**: Support for motivation, inspiration, wisdom, humor, love, and more
@@ -11,7 +11,7 @@ A powerful AI-powered quote generator built with FastAPI. Generate inspirational
 - **Fast & Async**: Built with FastAPI for high performance
 - **Interactive Docs**: Automatic Swagger UI and ReDoc documentation
 
-## Project Structure 📁
+## Project Structure
 
 ```
 ai_quote_generator/
@@ -39,7 +39,7 @@ ai_quote_generator/
 └── README.md                 # This file
 ```
 
-## Installation 🚀
+## Installation
 
 ### Prerequisites
 
@@ -84,7 +84,7 @@ ai_quote_generator/
    uvicorn main:app --reload --host 0.0.0.0 --port 8000
    ```
 
-## Usage 📖
+## Usage
 
 ### API Endpoints
 
@@ -161,7 +161,7 @@ Check API health status.
 - **Swagger UI**: http://localhost:8000/docs
 - **ReDoc**: http://localhost:8000/redoc
 
-## Configuration ⚙️
+## Configuration
 
 Edit the `.env` file to customize settings:
 
@@ -182,7 +182,7 @@ MAX_TOKENS=150
 TEMPERATURE=0.8
 ```
 
-## Example Usage with cURL 💻
+## Example Usage with cURL
 
 ```bash
 # Generate a custom quote
@@ -240,7 +240,7 @@ The `--reload` flag enables auto-reload on code changes.
 pytest tests/
 ```
 
-## Docker Support 🐳
+## Docker Support
 
 Build and run with Docker:
 
@@ -252,7 +252,7 @@ docker build -t ai-quote-generator .
 docker run -p 8000:8000 --env-file .env ai-quote-generator
 ```
 
-## API Models 📝
+## API Models
 
 ### QuoteRequest
 - `category` (string): Category of quote (motivation, inspiration, wisdom, etc.)
@@ -266,18 +266,9 @@ docker run -p 8000:8000 --env-file .env ai-quote-generator
 - `category` (string): Category of the quote
 - `timestamp` (string): ISO 8601 timestamp
 
-## Contributing 🤝
+## Contributing
 
 Contributions are welcome! Please feel free to submit a Pull Request.
 
-## License 📄
 
-This project is licensed under the MIT License.
-
-## Support 💬
-
-If you encounter any issues or have questions, please open an issue on GitHub.
-
----
-
-Built with ❤️ using FastAPI and Google Gemini AI
+AyaNexus🦢
