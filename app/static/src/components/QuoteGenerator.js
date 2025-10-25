@@ -49,12 +49,16 @@ const QuoteGenerator = () => {
       setLoading(false);
     }
   };
-
-  const handleCopyQuote = () => {
+    const handleCopyQuote = async () => {
     const textToCopy = `"${quote}" — ${author}`;
-    navigator.clipboard.writeText(textToCopy);
+    try {
+      await navigator.clipboard.writeText(textToCopy);
+      window.alert('Quote copied to clipboard!');
+    } catch (err) {
+      console.error('Failed to copy quote:', err);
+      window.alert('Failed to copy quote. Please check your browser permissions and try again.');
+    }
   };
-
   return (
     <div className="h-full flex flex-col">
       {/* Header - Spacer for balance */}
