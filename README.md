@@ -224,7 +224,7 @@ response = requests.get("http://localhost:8000/api/quotes/random")
 print(response.json())
 ```
 
-## Development 🛠️
+## Development
 
 ### Running in Development Mode
 
