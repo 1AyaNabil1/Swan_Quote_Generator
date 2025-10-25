@@ -202,7 +202,7 @@ curl "http://localhost:8000/api/quotes/random"
 curl "http://localhost:8000/api/quotes/categories"
 ```
 
-## Example Usage with Python 🐍
+## Example Usage with Python
 
 ```python
 import requests
@@ -224,7 +224,7 @@ response = requests.get("http://localhost:8000/api/quotes/random")
 print(response.json())
 ```
 
-## Development 🛠️
+## Development
 
 ### Running in Development Mode
 
@@ -270,5 +270,8 @@ docker run -p 8000:8000 --env-file .env ai-quote-generator
 
 Contributions are welcome! Please feel free to submit a Pull Request.
 
+---
 
-AyaNexus🦢
+<div align="center">
+  <em>Built by AyaNexus 🦢</em>
+</div>
