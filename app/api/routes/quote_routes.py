@@ -1,9 +1,9 @@
-"""
-API routes for quote generation.
-"""
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, HTTPException, status, Request
 from app.api.models import QuoteRequest, QuoteResponse, ErrorResponse, QuoteCategory
 from app.api.controllers import QuoteController
+import logging
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/quotes", tags=["quotes"])
 controller = QuoteController()
@@ -22,22 +22,17 @@ controller = QuoteController()
     }
 )
 async def generate_quote(request: QuoteRequest) -> QuoteResponse:
-    """
-    Generate a custom quote based on the provided parameters.
-    
-    - **category**: Category of the quote (motivation, inspiration, wisdom, etc.)
-    - **topic**: Optional specific topic for the quote
-    - **style**: Optional writing style (e.g., 'Shakespeare', 'modern', 'philosophical')
-    - **length**: Desired length: 'short', 'medium', or 'long'
-    """
     try:
+        logger.info(f"Received request: {request.model_dump()}")
         return await controller.generate_quote(request)
     except ValueError as e:
+        logger.error(f"Validation error: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(e)
         )
     except Exception as e:
+        logger.error(f"Error generating quote: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to generate quote: {str(e)}"
@@ -56,9 +51,6 @@ async def generate_quote(request: QuoteRequest) -> QuoteResponse:
     }
 )
 async def get_random_quote() -> QuoteResponse:
-    """
-    Generate a random inspirational quote.
-    """
     try:
         return await controller.get_random_quote()
     except ValueError as e:

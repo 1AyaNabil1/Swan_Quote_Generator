@@ -17,11 +17,17 @@ const QuoteGenerator = () => {
     setLoading(true);
     try {
       const requestBody = {
-        category: category || 'random',
-        topic: topic || null,
-        style: style || null,
+        category,
         length: 'medium'
       };
+      
+      // Only include topic and style if they have values
+      if (topic && topic.trim()) {
+        requestBody.topic = topic.trim();
+      }
+      if (style && style.trim()) {
+        requestBody.style = style.trim();
+      }
 
       const response = await fetch('http://localhost:8000/api/quotes/generate', {
         method: 'POST',
@@ -37,11 +43,11 @@ const QuoteGenerator = () => {
 
       const data = await response.json();
       setQuote(data.quote);
-      setAuthor(data.author || 'Ayō');
+      setAuthor('Ayō');
     } catch (error) {
       console.error('Error generating quote:', error);
       setQuote('Failed to generate quote. Please make sure the backend server is running.');
-      setAuthor('');
+      setAuthor('Ayō');
     } finally {
       setLoading(false);
     }
