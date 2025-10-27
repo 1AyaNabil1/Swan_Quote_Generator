@@ -22,7 +22,7 @@ class QuoteController:
         )
         return QuoteResponse(
             quote=quote_text,
-            author="AI Generated",
+            author="Ayō",
             category=request.category.value,
             timestamp=datetime.utcnow().isoformat() + "Z"
         )

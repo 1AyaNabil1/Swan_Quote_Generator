@@ -2,13 +2,16 @@ import React, { useState } from 'react';
 
 const QuoteGenerator = () => {
   const [quote, setQuote] = useState('');
-  const [author, setAuthor] = useState('Ayō');
+  const [author, setAuthor] = useState('');
   const [category, setCategory] = useState('motivation');
   const [topic, setTopic] = useState('');
   const [style, setStyle] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const categories = ['motivation', 'love', 'life', 'success', 'wisdom', 'happiness', 'inspiration'];
+  const categories = [
+    'motivation', 'inspiration', 'wisdom', 'humor', 
+    'love', 'success', 'life', 'friendship', 'happiness', 'random'
+  ];
 
   const handleGenerateQuote = async () => {
     setLoading(true);
@@ -33,7 +36,7 @@ const QuoteGenerator = () => {
         },
         body: JSON.stringify(requestBody),
       });
-
+      
       if (!response.ok) {
         throw new Error('Failed to generate quote');
       }
@@ -49,20 +52,18 @@ const QuoteGenerator = () => {
       setLoading(false);
     }
   };
-    const handleCopyQuote = async () => {
-    const textToCopy = `"${quote}" — ${author}`;
-    try {
-      await navigator.clipboard.writeText(textToCopy);
-      window.alert('Quote copied to clipboard!');
-    } catch (err) {
-      console.error('Failed to copy quote:', err);
-      window.alert('Failed to copy quote. Please check your browser permissions and try again.');
+
+  const handleCopyQuote = () => {
+    if (quote) {
+      navigator.clipboard.writeText(`"${quote}" - ${author}`);
+      alert('Quote copied to clipboard!');
     }
   };
+
   return (
     <div className="h-full flex flex-col">
-      {/* Header - Spacer for balance */}
-      <header className="flex items-center justify-between px-8 py-4">
+      {/* Header */}
+      <header className="flex items-center justify-between px-8 py-6">
         <div className="flex items-center space-x-3">
           {/* Empty left side for balance */}
         </div>
@@ -84,7 +85,7 @@ const QuoteGenerator = () => {
       </header>
 
       {/* Hero Section - Center */}
-      <div className="flex-shrink-0 text-center px-8 pb-12 pt-12">
+      <div className="flex-shrink-0 text-center px-8 pb-12 pt-2">
         <div className="flex flex-col items-center space-y-3">
           <h1 className="text-7xl md:text-8xl font-normal text-white tracking-tight" style={{ fontFamily: "'Courier New', 'Courier', monospace", fontWeight: 400 }}>
             Ayō
@@ -112,7 +113,7 @@ const QuoteGenerator = () => {
                 )}
                 <button 
                   onClick={handleCopyQuote}
-                  className="mt-6 px-5 py-2 bg-purple-primary/20 hover:bg-purple-primary/30 border border-purple-primary/40 rounded-lg text-white text-sm font-light transition-all" style={{ fontFamily: "'Crimson Text', 'Georgia', serif" }}
+                  className="mt-6 px-5 py-2 bg-purple-primary/20 hover:bg-purple-primary/30 border border-purple-primary/40 rounded-lg text-white text-sm font-light transition-all" style={{ fontFamily: "'Poppins', 'Inter', sans-serif" }}
                 >
                   Copy Quote
                 </button>
@@ -134,25 +135,18 @@ const QuoteGenerator = () => {
               <label className="block text-white/70 font-light mb-2 text-sm">
                 Category
               </label>
-              <div className="relative">
-                <select
-                  value={category}
-                  onChange={(e) => setCategory(e.target.value)}
-                  className="w-full px-4 py-2.5 pr-10 bg-black/30 border border-purple-primary/30 rounded-lg text-white text-sm focus:outline-none focus:border-purple-accent transition-all appearance-none"
-                  style={{ fontFamily: "'Poppins', 'Inter', sans-serif" }}
-                >
-                  {categories.map(cat => (
-                    <option key={cat} value={cat} className="bg-black">
-                      {cat.charAt(0).toUpperCase() + cat.slice(1)}
-                    </option>
-                  ))}
-                </select>
-                <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3">
-                  <svg className="h-4 w-4 text-white/70" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                  </svg>
-                </div>
-              </div>
+              <select
+                value={category}
+                onChange={(e) => setCategory(e.target.value)}
+                className="w-full px-4 py-2.5 bg-black/30 border border-purple-primary/30 rounded-lg text-white text-sm focus:outline-none focus:border-purple-accent transition-all"
+                style={{ fontFamily: "'Poppins', 'Inter', sans-serif" }}
+              >
+                {categories.map(cat => (
+                  <option key={cat} value={cat} className="bg-black">
+                    {cat.charAt(0).toUpperCase() + cat.slice(1)}
+                  </option>
+                ))}
+              </select>
             </div>
 
             <div>
@@ -196,11 +190,15 @@ const QuoteGenerator = () => {
       </div>
 
       {/* Footer */}
-      <footer className="py-6 text-center">
-        <p className="text-white/60 text-sm font-light">
+      <footer className="text-center pb-6">
+        <p className="text-white/60 text-sm font-light" style={{ fontFamily: "'Poppins', 'Inter', sans-serif" }}>
           Built by{' '}
-          <a href="https://ayanexus.dev/" target="_blank" rel="noopener noreferrer"
-             className="text-purple-light hover:text-purple-accent transition-colors font-medium">
+          <a 
+            href="https://ayanexus.dev/" 
+            target="_blank" 
+            rel="noopener noreferrer"
+            className="text-purple-light hover:text-purple-accent transition-colors font-medium"
+          >
             AyaNexus
           </a>
           {' '}🦢

@@ -109,7 +109,7 @@ Generate a quote with custom parameters.
 ```json
 {
   "quote": "The path to success is paved with persistence...",
-  "author": "AI Generated",
+  "author": "Ayō",
   "category": "motivation",
   "timestamp": "2025-10-23T10:30:00Z"
 }
@@ -124,7 +124,7 @@ Generate a random inspirational quote.
 ```json
 {
   "quote": "Every moment is a fresh beginning...",
-  "author": "AI Generated",
+  "author": "Ayō",
   "category": "random",
   "timestamp": "2025-10-23T10:30:00Z"
 }
@@ -262,7 +262,7 @@ docker run -p 8000:8000 --env-file .env ai-quote-generator
 
 ### QuoteResponse
 - `quote` (string): The generated quote
-- `author` (string): Author attribution (default: "AI Generated")
+- `author` (string): Author attribution (default: "Ayō")
 - `category` (string): Category of the quote
 - `timestamp` (string): ISO 8601 timestamp
 

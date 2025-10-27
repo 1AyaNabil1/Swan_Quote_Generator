@@ -35,12 +35,12 @@ class TestQuoteModels:
         """Test creating a QuoteResponse."""
         response = QuoteResponse(
             quote="Test quote",
-            author="AI Generated",
+            author="Ayō",
             category="motivation",
             timestamp="2025-10-23T10:30:00Z"
         )
         assert response.quote == "Test quote"
-        assert response.author == "AI Generated"
+        assert response.author == "Ayō"
         assert response.category == "motivation"
 
 
