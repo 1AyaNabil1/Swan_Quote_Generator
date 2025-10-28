@@ -1,0 +1,46 @@
+version: '3.8'
+
+services:
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        - BUILD_ENV=production
+    container_name: ai-quote-generator-prod
+    ports:
+      - "8000:8000"
+    environment:
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - APP_NAME=${APP_NAME:-Swan}
+      - APP_VERSION=${APP_VERSION:-1.0.0}
+      - DEBUG=False
+      - HOST=0.0.0.0
+      - PORT=8000
+      - DEFAULT_MODEL=${DEFAULT_MODEL:-gemini-1.5-flash}
+      - MAX_TOKENS=${MAX_TOKENS:-530}
+      - TEMPERATURE=${TEMPERATURE:-0.7}
+    env_file:
+      - .env
+    restart: always
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - ai-quote-network
+    # Resource limits for production
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 512M
+        reservations:
+          cpus: '0.5'
+          memory: 256M
+
+networks:
+  ai-quote-network:
+    driver: bridge
