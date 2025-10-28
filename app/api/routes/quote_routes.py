@@ -1,11 +1,17 @@
 from fastapi import APIRouter, HTTPException, status, Request, Depends
-from fastapi_limiter import FastAPILimiter
-from fastapi_limiter.depends import RateLimiter
 from app.api.models import QuoteRequest, QuoteResponse, ErrorResponse, QuoteCategory
 from app.api.controllers import QuoteController
 import logging
-import redis.asyncio as redis
 from app.config import settings
+
+# Disable rate limiting for serverless - Redis not available
+# try:
+#     from fastapi_limiter import FastAPILimiter
+#     from fastapi_limiter.depends import RateLimiter
+#     import redis.asyncio as redis
+#     RATE_LIMITING_AVAILABLE = True
+# except ImportError:
+#     RATE_LIMITING_AVAILABLE = False
 
 logger = logging.getLogger(__name__)
 
@@ -28,8 +34,8 @@ async def init_rate_limiter():
     logger.info("Rate limiter disabled for serverless deployment")
     return
 
-# Rate limiter dependency (10 requests per minute)
-rate_limiter = RateLimiter(times=10, seconds=60) if settings.debug else RateLimiter(times=10, seconds=60)
+# Rate limiter disabled for serverless
+# rate_limiter = RateLimiter(times=10, seconds=60) if settings.debug else RateLimiter(times=10, seconds=60)
 
 @router.post(
     "/generate",
