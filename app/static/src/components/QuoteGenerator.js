@@ -88,7 +88,7 @@ const QuoteGenerator = () => {
       <div className="flex-shrink-0 text-center px-8 pb-12 pt-2">
         <div className="flex flex-col items-center space-y-3">
           <h1 className="text-7xl md:text-8xl font-normal text-white tracking-tight" style={{ fontFamily: "'Courier New', 'Courier', monospace", fontWeight: 400 }}>
-            Ayō
+            Swan
           </h1>
           <p className="text-white/60 text-base md:text-lg max-w-xl font-light tracking-wide" style={{ fontFamily: "'Courier New', 'Courier', monospace" }}>
             AI quote generator to tailor your mood and preferences
