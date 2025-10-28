@@ -8,7 +8,7 @@ class Settings(BaseSettings):
     """Application settings loaded from environment variables."""
 
     # Google Gemini API Configuration
-    gemini_api_key: str  # Required API key for Google Gemini
+    gemini_api_key: str = ""  # API key for Google Gemini (set in environment)
     
     # Application Settings
     app_name: str = "Swan"
