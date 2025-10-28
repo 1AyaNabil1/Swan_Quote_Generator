@@ -10,18 +10,23 @@ from app.config import settings
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/quotes", tags=["quotes"])
-controller = QuoteController()
+
+# Lazy initialization of controller
+_controller = None
+
+def get_controller() -> QuoteController:
+    """Get or create the QuoteController instance."""
+    global _controller
+    if _controller is None:
+        _controller = QuoteController()
+    return _controller
 
 # Initialize rate limiter (only if Redis is configured)
 async def init_rate_limiter():
-    try:
-        redis_instance = redis.from_url("redis://localhost:6379", encoding="utf-8", decode_responses=True)
-        await FastAPILimiter.init(redis_instance)
-        logger.info("Rate limiter initialized with Redis")
-    except Exception as e:
-        logger.warning(f"Failed to initialize rate limiter: {str(e)}. Rate limiting disabled.")
-        # Fallback to no rate limiting in case of failure
-        pass
+    """Initialize rate limiter - disabled on Vercel serverless."""
+    # Skip Redis on serverless environments
+    logger.info("Rate limiter disabled for serverless deployment")
+    return
 
 # Rate limiter dependency (10 requests per minute)
 rate_limiter = RateLimiter(times=10, seconds=60) if settings.debug else RateLimiter(times=10, seconds=60)
@@ -44,6 +49,7 @@ rate_limiter = RateLimiter(times=10, seconds=60) if settings.debug else RateLimi
 async def generate_quote(request: QuoteRequest) -> QuoteResponse:
     try:
         logger.info(f"Received quote generation request: {request.model_dump()}")
+        controller = get_controller()
         return await controller.generate_quote(request)
     except ValueError as e:
         logger.error(f"Validation error: {str(e)}")
@@ -74,6 +80,7 @@ async def generate_quote(request: QuoteRequest) -> QuoteResponse:
 async def get_random_quote() -> QuoteResponse:
     try:
         logger.info("Received random quote request")
+        controller = get_controller()
         return await controller.get_random_quote()
     except ValueError as e:
         logger.error(f"Validation error: {str(e)}")
