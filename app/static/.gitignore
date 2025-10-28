@@ -7,7 +7,7 @@
 /coverage
 
 # Production
-/build
+# /build  <- Commented out - we need to commit build for Vercel
 
 # Misc
 .DS_Store
