@@ -79,6 +79,11 @@ try:
 except Exception as e:
     logger.error(f"Error mounting static files: {e}")
 
+@app.get("/test", tags=["test"])
+async def test_endpoint():
+    """Simple test endpoint to verify deployment."""
+    return {"status": "working", "message": "Vercel deployment successful!"}
+
 @app.get("/api", tags=["root"])
 async def api_root():
     """API root endpoint returning API information."""
