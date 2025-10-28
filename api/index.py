@@ -17,7 +17,8 @@ import logging
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from app.config import settings
-from app.api.routes.quote_routes import router as quote_router
+# Temporarily comment out to debug
+# from app.api.routes.quote_routes import router as quote_router
 
 # Configure logging
 logging.basicConfig(
@@ -54,7 +55,8 @@ app.add_middleware(
 )
 
 # Include API routers
-app.include_router(quote_router)
+# Temporarily commented out for debugging
+# app.include_router(quote_router)
 
 # Mount static files for the React app
 static_dir = Path(__file__).parent.parent / "app" / "static" / "build"
