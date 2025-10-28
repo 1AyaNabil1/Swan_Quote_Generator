@@ -1,6 +1,6 @@
 # AI Quote Generator
 
-A powerful AI-powered quote generator built with FastAPI. Generate inspirational, motivational, and creative quotes on demand using OpenAI's GPT models.
+A powerful AI-powered quote generator built with FastAPI. Generate inspirational, motivational, and creative quotes on demand using Google's Gemini AI.
 
 ## Features
 
@@ -109,7 +109,7 @@ Generate a quote with custom parameters.
 ```json
 {
   "quote": "The path to success is paved with persistence...",
-  "author": "Ayō",
+  "author": "Swan",
   "category": "motivation",
   "timestamp": "2025-10-23T10:30:00Z"
 }
@@ -124,7 +124,7 @@ Generate a random inspirational quote.
 ```json
 {
   "quote": "Every moment is a fresh beginning...",
-  "author": "Ayō",
+  "author": "Swan",
   "category": "random",
   "timestamp": "2025-10-23T10:30:00Z"
 }
@@ -178,7 +178,7 @@ PORT=8000
 
 # AI Model Settings
 DEFAULT_MODEL=gemini-pro
-MAX_TOKENS=150
+MAX_TOKENS=2048
 TEMPERATURE=0.8
 ```
 
@@ -262,7 +262,7 @@ docker run -p 8000:8000 --env-file .env ai-quote-generator
 
 ### QuoteResponse
 - `quote` (string): The generated quote
-- `author` (string): Author attribution (default: "Ayō")
+- `author` (string): Author attribution (default: "Swan")
 - `category` (string): Category of the quote
 - `timestamp` (string): ISO 8601 timestamp
 
