@@ -217,4 +217,3 @@ __marimo__/
 .streamlit/secrets.toml
 
 app/static/node_modules/
-.vercel
