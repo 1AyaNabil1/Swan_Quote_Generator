@@ -1,4 +1,4 @@
-# AI Quote Generator
+# Swan-Quote Generator
 
 A powerful AI-powered quote generator built with FastAPI. Generate inspirational, motivational, and creative quotes on demand using Google's Gemini AI.
 
