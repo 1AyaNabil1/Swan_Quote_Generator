@@ -8,8 +8,15 @@ logger = logging.getLogger(__name__)
 
 class QuoteController:
     def __init__(self):
-        self.ai_client = AIClient()
+        self._ai_client = None
         self.prompt_builder = PromptBuilder()
+    
+    @property
+    def ai_client(self):
+        """Lazy initialization of AIClient to avoid startup errors."""
+        if self._ai_client is None:
+            self._ai_client = AIClient()
+        return self._ai_client
 
     @retry(
         stop=stop_after_attempt(3),
