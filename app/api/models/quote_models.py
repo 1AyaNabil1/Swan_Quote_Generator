@@ -1,7 +1,7 @@
 """
 Pydantic models for quote generation requests and responses.
 """
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, validator
 from typing import Optional, List
 from enum import Enum
 
@@ -33,21 +33,42 @@ class QuoteRequest(BaseModel):
     )
     style: Optional[str] = Field(
         default=None,
-        description="Writing style (e.g., 'Shakespeare', 'modern', 'philosophical')",
+        description="Writing style (e.g., 'Shakespearean', 'modern', 'philosophical')",
         max_length=50
     )
     length: Optional[str] = Field(
         default="medium",
-        description="Desired length: 'short', 'medium', or 'long'"
+        description="Desired length: 'short' (10-20 words), 'medium' (20-40 words), or 'long' (40-60 words)"
     )
-    
+    temperature: Optional[float] = Field(
+        default=0.7,
+        description="Creativity temperature (0.0-1.0)",
+        ge=0.0,
+        le=1.0
+    )
+    max_tokens: Optional[int] = Field(
+        default=2048,  # High default for Gemini free tier
+        description="Maximum tokens to generate (100-8192)",
+        ge=100,
+        le=8192
+    )
+
+    @validator("length")
+    def validate_length(cls, v):
+        valid_lengths = ["short", "medium", "long"]
+        if v not in valid_lengths:
+            raise ValueError(f"Length must be one of {valid_lengths}")
+        return v
+
     class Config:
         json_schema_extra = {
             "example": {
                 "category": "motivation",
                 "topic": "perseverance",
                 "style": "modern",
-                "length": "medium"
+                "length": "medium",
+                "temperature": 0.7,
+                "max_tokens": 2048
             }
         }
 
@@ -55,17 +76,17 @@ class QuoteRequest(BaseModel):
 class QuoteResponse(BaseModel):
     """Response model containing the generated quote."""
     quote: str = Field(..., description="The generated quote")
-    author: str = Field(default="Ayō", description="Author attribution")
+    author: str = Field(default="Swan", description="Author attribution")
     category: str = Field(..., description="Category of the quote")
     timestamp: str = Field(..., description="Generation timestamp")
     
     class Config:
         json_schema_extra = {
             "example": {
-                "quote": "Success is not final, failure is not fatal: it is the courage to continue that counts.",
-                "author": "Ayō",
+                "quote": "Keep pushing forward, for perseverance turns dreams into achievements.",
+                "author": "Swan",
                 "category": "motivation",
-                "timestamp": "2025-10-23T10:30:00Z"
+                "timestamp": "2025-10-27T18:30:00Z"
             }
         }
 
