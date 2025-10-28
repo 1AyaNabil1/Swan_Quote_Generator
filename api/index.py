@@ -58,21 +58,40 @@ app.include_router(quote_router)
 
 # Mount static files for the React app
 static_dir = Path(__file__).parent.parent / "app" / "static" / "build"
+logger.info(f"Current directory: {Path(__file__).parent}")
+logger.info(f"Parent directory: {Path(__file__).parent.parent}")
 logger.info(f"Looking for static files at: {static_dir}")
+logger.info(f"Static dir exists: {static_dir.exists()}")
+
+# Debug: List what's actually available
+if static_dir.parent.exists():
+    logger.info(f"Contents of {static_dir.parent}: {list(static_dir.parent.iterdir())}")
 
 if static_dir.exists():
-    logger.info("Static directory found, mounting static files")
+    logger.info(f"Static directory found! Contents: {list(static_dir.iterdir())}")
     # Mount the static folder for JS/CSS files
     static_assets = static_dir / "static"
     if static_assets.exists():
+        logger.info(f"Mounting /static from {static_assets}")
         app.mount("/static", StaticFiles(directory=str(static_assets)), name="static")
+    else:
+        logger.warning(f"Static assets not found at {static_assets}")
     
     # Mount the img folder for images
     img_dir = static_dir / "img"
     if img_dir.exists():
+        logger.info(f"Mounting /img from {img_dir}")
         app.mount("/img", StaticFiles(directory=str(img_dir)), name="img")
+    else:
+        logger.warning(f"Image directory not found at {img_dir}")
 else:
-    logger.warning(f"Static directory not found at {static_dir}")
+    logger.error(f"Static directory not found at {static_dir}")
+    # Try to find where we actually are
+    current = Path(__file__).parent.parent
+    logger.error(f"Checking what exists in {current}:")
+    if current.exists():
+        for item in current.iterdir():
+            logger.error(f"  - {item}")
 
 @app.get("/api", tags=["root"])
 async def api_root():

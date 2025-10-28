@@ -8,7 +8,7 @@ __pycache__/
 *.egg
 *.egg-info/
 dist/
-build/
+# build/  <- DO NOT ignore - we need app/static/build for React!
 *.py[cod]
 *$py.class
 
