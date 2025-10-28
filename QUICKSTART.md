@@ -92,4 +92,8 @@ curl -X POST http://localhost:8000/api/quotes/generate \
 - Customize settings in `.env`
 - Add your own quote categories in `app/api/models/quote_models.py`
 
-Happy quote generating! ✨
+---
+
+<div align="center">
+  <em>Built by AyaNexus 🦢</em>
+</div>

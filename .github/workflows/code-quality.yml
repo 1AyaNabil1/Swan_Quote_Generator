@@ -1,0 +1,73 @@
+name: Code Quality
+
+on:
+  pull_request:
+    branches: [ main, develop ]
+  workflow_dispatch:
+
+jobs:
+  code-quality:
+    name: Code Quality Checks
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0  # Full history for better analysis
+    
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+        cache: 'pip'
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install flake8 black isort pylint radon
+    
+    - name: Run flake8
+      run: |
+        echo "Running flake8..."
+        flake8 app/ tests/ --count --statistics --format=default
+      continue-on-error: true
+    
+    - name: Check code formatting
+      run: |
+        echo "Checking code formatting with black..."
+        black --check --diff app/ tests/
+      continue-on-error: true
+    
+    - name: Check import sorting
+      run: |
+        echo "Checking import order with isort..."
+        isort --check-only --diff app/ tests/
+      continue-on-error: true
+    
+    - name: Calculate code complexity
+      run: |
+        echo "Calculating cyclomatic complexity..."
+        radon cc app/ -a -nb
+        echo ""
+        echo "Calculating maintainability index..."
+        radon mi app/ -nb
+      continue-on-error: true
+    
+    - name: Run pylint
+      run: |
+        echo "Running pylint..."
+        pylint app/ --exit-zero --output-format=text
+      continue-on-error: true
+    
+    - name: Check for TODO/FIXME comments
+      run: |
+        echo "Checking for TODO/FIXME comments..."
+        grep -r "TODO\|FIXME" app/ tests/ || echo "No TODO/FIXME found"
+      continue-on-error: true
+    
+    - name: Summary
+      run: |
+        echo "Code quality checks completed!"
+        echo "Review the output above for any issues to address."

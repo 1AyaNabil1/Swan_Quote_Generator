@@ -4,11 +4,10 @@ A beautiful, dark-themed React application with purple accents, animated backgro
 
 ## Features
 
-- 🎨 Dark theme with purple gradient design
-- ✨ Animated background with floating purple particles
-- 💫 Fluid cursor effect using SplashCursor
-- 📱 Responsive design with Tailwind CSS
-- 🎯 Single-page application
+- Dark theme with purple gradient design
+- Animated background with floating purple particles
+- Responsive design with Tailwind CSS
+- Single-page application
 
 ## Getting Started
 
@@ -62,3 +61,10 @@ const response = await fetch('/api/quotes/generate', {
   body: JSON.stringify({ topic: topic || 'inspiration' }),
 });
 ```
+
+
+---
+
+<div align="center">
+  <em>Built by AyaNexus 🦢</em>
+</div>

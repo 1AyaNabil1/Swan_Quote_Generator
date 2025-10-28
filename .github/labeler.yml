@@ -1,0 +1,59 @@
+# Label configuration for automatic PR labeling
+
+# Frontend changes
+frontend:
+  - app/static/**/*
+  - app/static/src/**/*
+  - app/static/public/**/*
+  - '*.css'
+  - '*.js'
+  - '*.jsx'
+
+# Backend changes
+backend:
+  - app/**/*.py
+  - app/api/**/*
+  - main.py
+  - api/**/*
+
+# Tests
+tests:
+  - tests/**/*
+  - '**/*test*.py'
+  - pytest.ini
+
+# Documentation
+documentation:
+  - '**/*.md'
+  - '*.md'
+  - docs/**/*
+
+# Configuration
+configuration:
+  - '*.yml'
+  - '*.yaml'
+  - '*.json'
+  - '*.toml'
+  - '*.ini'
+  - .github/**/*
+  - Dockerfile
+  - docker-compose*.yml
+  - Makefile
+  - vercel.json
+
+# Dependencies
+dependencies:
+  - requirements.txt
+  - package.json
+  - package-lock.json
+  - app/static/package.json
+
+# Build/Deploy
+build:
+  - Dockerfile
+  - docker-compose*.yml
+  - build.sh
+  - deploy.sh
+  - start.sh
+  - vercel.json
+  - Makefile
