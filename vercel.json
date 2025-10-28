@@ -8,6 +8,14 @@
   ],
   "routes": [
     {
+      "src": "/static/(.*)",
+      "dest": "app/static/build/static/$1"
+    },
+    {
+      "src": "/img/(.*)",
+      "dest": "app/static/build/img/$1"
+    },
+    {
       "src": "/api/(.*)",
       "dest": "api/index.py"
     },
@@ -31,5 +39,6 @@
       "src": "/(.*)",
       "dest": "api/index.py"
     }
-  ]
+  ],
+  "outputDirectory": "app/static/build"
 }

@@ -94,6 +94,8 @@ async def serve_react_app(full_path: str):
 if __name__ == "__main__":
     import uvicorn
     
+    # Only run uvicorn server when executed directly (local development)
+    # On Vercel, the serverless function in api/index.py will be used instead
     uvicorn.run(
         "main:app",
         host=settings.host,
