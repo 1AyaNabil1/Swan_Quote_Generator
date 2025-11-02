@@ -34,9 +34,11 @@ class QuoteController:
             style=request.style,
             length=request.length or "medium"
         )
+        # Combine system and user prompts for Gemini
+        combined_prompt = f"{system_prompt}\n\n{user_prompt}"
+        
         quote_text = await self.ai_client.generate_quote(
-            prompt=user_prompt,
-            system_prompt=system_prompt,
+            prompt=combined_prompt,
             max_tokens=request.max_tokens,
             temperature=request.temperature
         )

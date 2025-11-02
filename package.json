@@ -1,8 +1,0 @@
-{
-  "name": "ai-quote-generator",
-  "version": "1.0.0",
-  "start": "react-scripts start",
-  "scripts": {
-    "build": "cd app/static && npm install && npm run build"
-  }
-}
