@@ -49,25 +49,6 @@ app.add_middleware(
 # Include API routers
 app.include_router(quote_router)
 
-# Serve React build from static/build/ directory (at project root)
-# Path goes up from app/ to project root, then to static/build
-build_dir = Path(__file__).parent.parent / "static" / "build"
-if build_dir.exists():
-    # Mount static assets (JS, CSS, etc.)
-    static_assets_dir = build_dir / "static"
-    if static_assets_dir.exists():
-        app.mount("/static", StaticFiles(directory=str(static_assets_dir)), name="static-assets")
-    
-    # Mount images directory if it exists
-    img_dir = build_dir / "img"
-    if img_dir.exists():
-        app.mount("/img", StaticFiles(directory=str(img_dir)), name="images")
-    
-    logger.info(f"✓ React app configured from {build_dir}")
-else:
-    logger.warning(f"⚠ React build not found at {build_dir}. Run 'npm run build' in static/ directory.")
-
-
 @app.get("/health", tags=["health"])
 async def health_check():
     """Health check endpoint for monitoring."""
@@ -77,28 +58,17 @@ async def health_check():
         "model": settings.default_model
     }
 
+# Serve React build
+build_dir = Path(__file__).parent.parent / "static" / "build"
+if build_dir.exists():
+    app.mount("/", StaticFiles(directory=str(build_dir), html=True), name="static")
+    logger.info(f"React app served from {build_dir}")
+else:
+    @app.get("/")
+    async def no_build():
+        return {"error": "React build missing. Run: cd static && npm run build"}
 
-# Catch-all route to serve React SPA (must be last)
-@app.get("/{full_path:path}", tags=["frontend"])
-async def serve_react_app(full_path: str):
-    """Serve the React single-page application."""
-    build_dir_local = Path(__file__).parent.parent / "static" / "build"
-    index_file = build_dir_local / "index.html"
-    if index_file.exists():
-        return FileResponse(index_file)
-    return JSONResponse(
-        status_code=404,
-        content={"error": "Frontend not found. Build the React app: cd static && npm run build"}
-    )
-
-
-# Local development server (not used on Vercel)
+# Local dev only
 if __name__ == "__main__":
     import uvicorn
-    logger.info("Starting local development server...")
-    uvicorn.run(
-        "main:app",
-        host="0.0.0.0",
-        port=8000,
-        reload=True
-    )
+    uvicorn.run("app.main:app", host="0.0.0.0", port=8000, reload=True)

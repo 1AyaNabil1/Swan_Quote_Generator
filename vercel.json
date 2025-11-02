@@ -3,10 +3,7 @@
   "builds": [
     {
       "src": "api/index.py",
-      "use": "@vercel/python",
-      "config": {
-        "maxLambdaSize": "15mb"
-      }
+      "use": "@vercel/python"
     },
     {
       "src": "static/package.json",
@@ -22,25 +19,8 @@
       "dest": "/api/index.py"
     },
     {
-      "src": "/static/(.*)",
-      "dest": "/static/build/static/$1"
-    },
-    {
-      "src": "/img/(.*)",
-      "dest": "/static/build/img/$1"
-    },
-    {
       "src": "/(.*)",
       "dest": "/static/build/index.html"
-    }
-  ],
-  "env": {
-    "PYTHON_VERSION": "3.11"
-  },
-  "rewrites": [
-    {
-      "source": "/api/:path*",
-      "destination": "/api/index.py"
     }
   ]
 }
