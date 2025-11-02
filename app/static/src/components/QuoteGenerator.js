@@ -29,7 +29,7 @@ const QuoteGenerator = () => {
         requestBody.style = style.trim();
       }
 
-      const response = await fetch('http://localhost:8000/api/quotes/generate', {
+      const response = await fetch('https://api.quotable.io/random', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
