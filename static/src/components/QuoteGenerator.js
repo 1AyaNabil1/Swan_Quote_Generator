@@ -64,7 +64,7 @@ const QuoteGenerator = () => {
   return (
     <div className="h-full flex flex-col">
       {/* Header */}
-      <header className="flex items-center justify-between px-8 py-6">
+      <header className="flex items-center justify-between px-4 md:px-8 py-4 md:py-6">
         <div className="flex items-center space-x-3">
           {/* Empty left side for balance */}
         </div>
@@ -76,7 +76,7 @@ const QuoteGenerator = () => {
           aria-label="View on GitHub"
         >
           <svg
-            className="w-6 h-6"
+            className="w-5 h-5 md:w-6 md:h-6"
             fill="currentColor"
             viewBox="0 0 24 24"
           >
@@ -86,113 +86,115 @@ const QuoteGenerator = () => {
       </header>
 
       {/* Hero Section - Center */}
-      <div className="flex-shrink-0 text-center px-8 pb-12 pt-2">
-        <div className="flex flex-col items-center space-y-3">
-          <h1 className="text-7xl md:text-8xl font-normal text-white tracking-tight" style={{ fontFamily: "'Courier New', 'Courier', monospace", fontWeight: 400 }}>
+      <div className="flex-shrink-0 text-center px-4 md:px-8 pb-4 md:pb-8 pt-2">
+        <div className="flex flex-col items-center space-y-1 md:space-y-3">
+          <h1 className="text-5xl md:text-7xl lg:text-8xl font-normal text-white tracking-tight" style={{ fontFamily: "'Courier New', 'Courier', monospace", fontWeight: 400 }}>
             Swan
           </h1>
-          <p className="text-white/60 text-base md:text-lg max-w-xl font-light tracking-wide" style={{ fontFamily: "'Courier New', 'Courier', monospace" }}>
+          <p className="text-white/60 text-sm md:text-base lg:text-lg max-w-xl font-light tracking-wide px-4" style={{ fontFamily: "'Courier New', 'Courier', monospace" }}>
             AI quote generator to tailor your mood and preferences
           </p>
         </div>
       </div>
 
-      {/* Two Column Layout */}
-      <div className="flex-1 grid grid-cols-1 lg:grid-cols-2 gap-8 px-8 pb-8 overflow-hidden">
-        {/* Left Column - Quote Display */}
-        <div className="flex items-center justify-center">
-          <div className="w-full max-w-2xl border border-purple-primary/20 rounded-2xl p-8 md:p-12 min-h-[280px] flex items-center justify-center bg-gradient-to-br from-purple-primary/20 via-purple-accent/10 to-transparent backdrop-blur-sm">
-            {quote ? (
-              <div className="space-y-6 w-full">
-                <div className="text-2xl md:text-3xl font-serif text-white/90 leading-relaxed italic" style={{ fontFamily: "'Crimson Text', 'Georgia', serif" }}>
-                  "{quote}"
-                </div>
-                {author && (
-                  <div className="text-right text-base text-purple-light/80 font-light">
-                    — {author}
+      {/* Mobile-First Layout - Scrollable on mobile, Two columns on desktop */}
+      <div className="flex-1 px-4 md:px-8 pb-4 md:pb-8 overflow-y-auto md:overflow-hidden">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-8 h-full">
+          {/* Quote Display - More compact on mobile */}
+          <div className="flex items-center justify-center order-2 lg:order-1">
+            <div className="w-full max-w-2xl border border-purple-primary/20 rounded-xl md:rounded-2xl p-4 md:p-8 lg:p-12 min-h-[180px] md:min-h-[280px] flex items-center justify-center bg-gradient-to-br from-purple-primary/20 via-purple-accent/10 to-transparent backdrop-blur-sm">
+              {quote ? (
+                <div className="space-y-3 md:space-y-6 w-full">
+                  <div className="text-lg md:text-2xl lg:text-3xl font-serif text-white/90 leading-relaxed italic" style={{ fontFamily: "'Crimson Text', 'Georgia', serif" }}>
+                    "{quote}"
                   </div>
-                )}
-                <button 
-                  onClick={handleCopyQuote}
-                  className="mt-6 px-5 py-2 bg-purple-primary/20 hover:bg-purple-primary/30 border border-purple-primary/40 rounded-lg text-white text-sm font-light transition-all" style={{ fontFamily: "'Poppins', 'Inter', sans-serif" }}
-                >
-                  Copy Quote
-                </button>
-              </div>
-            ) : (
-              <div className="text-center">
-                <p className="text-xl text-white/30 italic font-light" style={{ fontFamily: "'Crimson Text', 'Georgia', serif" }}>
-                  Your quote will appear here...
-                </p>
-              </div>
-            )}
+                  {author && (
+                    <div className="text-right text-sm md:text-base text-purple-light/80 font-light">
+                      — {author}
+                    </div>
+                  )}
+                  <button 
+                    onClick={handleCopyQuote}
+                    className="mt-3 md:mt-6 px-4 md:px-5 py-2 bg-purple-primary/20 hover:bg-purple-primary/30 border border-purple-primary/40 rounded-lg text-white text-xs md:text-sm font-light transition-all w-full md:w-auto" style={{ fontFamily: "'Poppins', 'Inter', sans-serif" }}
+                  >
+                    Copy Quote
+                  </button>
+                </div>
+              ) : (
+                <div className="text-center">
+                  <p className="text-base md:text-xl text-white/30 italic font-light" style={{ fontFamily: "'Crimson Text', 'Georgia', serif" }}>
+                    Your quote will appear here...
+                  </p>
+                </div>
+              )}
+            </div>
           </div>
-        </div>
 
-        {/* Right Column - Controls */}
-        <div className="flex items-center justify-center">
-          <div className="w-full max-w-md space-y-5" style={{ fontFamily: "'Poppins', 'Inter', sans-serif" }}>
-            <div>
-              <label className="block text-white/70 font-light mb-2 text-sm">
-                Category
-              </label>
-              <select
-                value={category}
-                onChange={(e) => setCategory(e.target.value)}
-                className="w-full px-4 py-2.5 bg-black/30 border border-purple-primary/30 rounded-lg text-white text-sm focus:outline-none focus:border-purple-accent transition-all"
+          {/* Controls - Show first on mobile for better UX */}
+          <div className="flex items-start md:items-center justify-center order-1 lg:order-2">
+            <div className="w-full max-w-md space-y-3 md:space-y-5" style={{ fontFamily: "'Poppins', 'Inter', sans-serif" }}>
+              <div>
+                <label className="block text-white/70 font-light mb-1.5 md:mb-2 text-xs md:text-sm">
+                  Category
+                </label>
+                <select
+                  value={category}
+                  onChange={(e) => setCategory(e.target.value)}
+                  className="w-full px-3 md:px-4 py-2 md:py-2.5 bg-black/30 border border-purple-primary/30 rounded-lg text-white text-sm focus:outline-none focus:border-purple-accent transition-all"
+                  style={{ fontFamily: "'Poppins', 'Inter', sans-serif" }}
+                >
+                  {categories.map(cat => (
+                    <option key={cat} value={cat} className="bg-black">
+                      {cat.charAt(0).toUpperCase() + cat.slice(1)}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-white/70 font-light mb-1.5 md:mb-2 text-xs md:text-sm">
+                  Topic (optional)
+                </label>
+                <input
+                  type="text"
+                  value={topic}
+                  onChange={(e) => setTopic(e.target.value)}
+                  placeholder="e.g., perseverance, courage..."
+                  className="w-full px-3 md:px-4 py-2 md:py-2.5 bg-black/30 border border-purple-primary/30 rounded-lg text-white text-sm placeholder-white/30 focus:outline-none focus:border-purple-accent transition-all"
+                  style={{ fontFamily: "'Poppins', 'Inter', sans-serif" }}
+                />
+              </div>
+
+              <div>
+                <label className="block text-white/70 font-light mb-1.5 md:mb-2 text-xs md:text-sm">
+                  Style (optional)
+                </label>
+                <input
+                  type="text"
+                  value={style}
+                  onChange={(e) => setStyle(e.target.value)}
+                  placeholder="e.g., Shakespeare, modern..."
+                  className="w-full px-3 md:px-4 py-2 md:py-2.5 bg-black/30 border border-purple-primary/30 rounded-lg text-white text-sm placeholder-white/30 focus:outline-none focus:border-purple-accent transition-all"
+                  style={{ fontFamily: "'Poppins', 'Inter', sans-serif" }}
+                />
+              </div>
+
+              <button
+                onClick={handleGenerateQuote}
+                disabled={loading}
+                className="w-full px-6 py-2.5 md:py-3 bg-gradient-to-r from-purple-primary via-purple-accent to-purple-primary hover:from-purple-accent hover:via-purple-light hover:to-purple-accent rounded-full text-white text-sm font-medium shadow-lg shadow-purple-primary/30 hover:shadow-purple-light/70 hover:shadow-2xl hover:scale-[1.02] transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed mt-4 md:mt-6"
                 style={{ fontFamily: "'Poppins', 'Inter', sans-serif" }}
               >
-                {categories.map(cat => (
-                  <option key={cat} value={cat} className="bg-black">
-                    {cat.charAt(0).toUpperCase() + cat.slice(1)}
-                  </option>
-                ))}
-              </select>
+                {loading ? 'Generating...' : 'Generate Quote'}
+              </button>
             </div>
-
-            <div>
-              <label className="block text-white/70 font-light mb-2 text-sm">
-                Topic (optional)
-              </label>
-              <input
-                type="text"
-                value={topic}
-                onChange={(e) => setTopic(e.target.value)}
-                placeholder="e.g., perseverance, courage..."
-                className="w-full px-4 py-2.5 bg-black/30 border border-purple-primary/30 rounded-lg text-white text-sm placeholder-white/30 focus:outline-none focus:border-purple-accent transition-all"
-                style={{ fontFamily: "'Poppins', 'Inter', sans-serif" }}
-              />
-            </div>
-
-            <div>
-              <label className="block text-white/70 font-light mb-2 text-sm">
-                Style (optional)
-              </label>
-              <input
-                type="text"
-                value={style}
-                onChange={(e) => setStyle(e.target.value)}
-                placeholder="e.g., Shakespeare, modern..."
-                className="w-full px-4 py-2.5 bg-black/30 border border-purple-primary/30 rounded-lg text-white text-sm placeholder-white/30 focus:outline-none focus:border-purple-accent transition-all"
-                style={{ fontFamily: "'Poppins', 'Inter', sans-serif" }}
-              />
-            </div>
-
-            <button
-              onClick={handleGenerateQuote}
-              disabled={loading}
-              className="w-full px-6 py-3 bg-gradient-to-r from-purple-primary via-purple-accent to-purple-primary hover:from-purple-accent hover:via-purple-light hover:to-purple-accent rounded-full text-white text-sm font-medium shadow-lg shadow-purple-primary/30 hover:shadow-purple-light/70 hover:shadow-2xl hover:scale-[1.02] transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed mt-6"
-              style={{ fontFamily: "'Poppins', 'Inter', sans-serif" }}
-            >
-              {loading ? 'Generating...' : 'Generate Quote'}
-            </button>
           </div>
         </div>
       </div>
 
-      {/* Footer */}
-      <footer className="text-center pb-6">
-        <p className="text-white/60 text-sm font-light" style={{ fontFamily: "'Poppins', 'Inter', sans-serif" }}>
+      {/* Footer - Smaller on mobile */}
+      <footer className="text-center pb-4 md:pb-6 flex-shrink-0">
+        <p className="text-white/60 text-xs md:text-sm font-light" style={{ fontFamily: "'Poppins', 'Inter', sans-serif" }}>
           Built by{' '}
           <a 
             href="https://ayanexus.dev/" 

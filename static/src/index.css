@@ -11,6 +11,9 @@ body {
   -moz-osx-font-smoothing: grayscale;
   overflow: hidden;
   height: 100vh;
+  /* Prevent bounce scrolling on mobile */
+  overscroll-behavior: none;
+  -webkit-overflow-scrolling: touch;
 }
 
 code {
@@ -24,4 +27,13 @@ code {
 
 #root {
   height: 100vh;
+  /* Prevent mobile viewport height issues */
+  height: 100dvh;
+}
+
+/* Mobile viewport optimization */
+@supports (height: 100dvh) {
+  body, #root {
+    height: 100dvh;
+  }
 }
