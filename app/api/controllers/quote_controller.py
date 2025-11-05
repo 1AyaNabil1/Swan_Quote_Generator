@@ -1,7 +1,6 @@
 from datetime import datetime
 from app.api.models import QuoteRequest, QuoteResponse, QuoteCategory
 from app.api.utils import AIClient, PromptBuilder
-from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception_type
 import logging
 
 logger = logging.getLogger(__name__)
@@ -18,15 +17,8 @@ class QuoteController:
             self._ai_client = AIClient()
         return self._ai_client
 
-    @retry(
-        stop=stop_after_attempt(3),
-        wait=wait_exponential(multiplier=1, min=4, max=10),
-        retry=retry_if_exception_type(Exception),
-        before_sleep=lambda retry_state: logger.warning(
-            f"Retrying quote generation (attempt {retry_state.attempt_number})... Last error: {retry_state.outcome.exception()}"
-        )
-    )
     async def generate_quote(self, request: QuoteRequest) -> QuoteResponse:
+        """Generate a quote without retry logic for faster response."""
         system_prompt = self.prompt_builder.build_system_prompt()
         user_prompt = self.prompt_builder.build_quote_prompt(
             category=request.category.value,

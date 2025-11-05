@@ -41,7 +41,7 @@ class QuoteRequest(BaseModel):
         description="Desired length: 'short' (10-20 words), 'medium' (20-40 words), or 'long' (40-60 words)"
     )
     temperature: Optional[float] = Field(
-        default=0.7,
+        default=0.8,  # Matches config for consistency
         description="Creativity temperature (0.0-1.0)",
         ge=0.0,
         le=1.0
@@ -50,7 +50,7 @@ class QuoteRequest(BaseModel):
         default=2048,  # High default for Gemini free tier
         description="Maximum tokens to generate (100-8192)",
         ge=100,
-        le=8192
+        le=300
     )
 
     @validator("length")
@@ -67,7 +67,7 @@ class QuoteRequest(BaseModel):
                 "topic": "perseverance",
                 "style": "modern",
                 "length": "medium",
-                "temperature": 0.7,
+                "temperature": 0.8,
                 "max_tokens": 2048
             }
         }
