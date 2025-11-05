@@ -140,8 +140,14 @@ const QuoteGenerator = () => {
                 <select
                   value={category}
                   onChange={(e) => setCategory(e.target.value)}
-                  className="w-full px-3 md:px-4 py-2 md:py-2.5 bg-black/30 border border-purple-primary/30 rounded-lg text-white text-sm focus:outline-none focus:border-purple-accent transition-all"
-                  style={{ fontFamily: "'Poppins', 'Inter', sans-serif" }}
+                  className="w-full px-3 md:px-4 py-2 md:py-2.5 bg-black/30 border border-purple-primary/30 rounded-lg text-white text-sm focus:outline-none focus:border-purple-accent transition-all appearance-none pr-8 cursor-pointer"
+                  style={{ 
+                    fontFamily: "'Poppins', 'Inter', sans-serif",
+                    backgroundImage: "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20' stroke='%23a78bfa'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M6 8l4 4 4-4'%3E%3C/path%3E%3C/svg%3E\")",
+                    backgroundRepeat: 'no-repeat',
+                    backgroundPosition: 'right 0.75rem center',
+                    backgroundSize: '1rem'
+                  }}
                 >
                   {categories.map(cat => (
                     <option key={cat} value={cat} className="bg-black">
