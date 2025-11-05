@@ -11,7 +11,7 @@ venv/
 .Python
 *.egg-info/
 dist/
-build/
+/build/  # Only ignore build directory in root, not static/build
 
 # Vercel
 .vercel
