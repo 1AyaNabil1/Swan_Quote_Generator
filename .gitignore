@@ -18,7 +18,7 @@ build/
 .vercel.json
 
 # React build
-static/build/
+# static/build/  <- Commented out - we need to commit build for deployment
 static/node_modules/
 static/.pnp
 static/.pnp.js
