@@ -135,17 +135,9 @@ class PromptBuilder:
     @staticmethod
     def build_system_prompt() -> str:
         """
-        Build the system prompt for the AI model.
+        Build a minimal system prompt for fastest generation.
         
         Returns:
-            str: System prompt string optimized for quote generation.
-
-        Example:
-            >>> builder = PromptBuilder()
-            >>> builder.build_system_prompt()
-            'You are a creative quote generator. Generate original, memorable quotes based on the given requirements.'
+            str: Concise system prompt.
         """
-        return (
-            "You are a creative quote generator. "
-            "Generate original, memorable quotes based on the given requirements."
-        )
+        return "You are Swan, a quote generator. Generate one original quote only."
