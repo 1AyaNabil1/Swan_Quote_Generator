@@ -1,15 +1,34 @@
-# AI Quote Generator
+<div align="center">
 
-A powerful AI-powered quote generator built with FastAPI. Generate inspirational, motivational, and creative quotes on demand using Google's Gemini AI.
+# Swan - Quote Generator 
+Because sometimes, the right words can light the stars inside you | [Website](https://www.swanexus.dev)
+
+
+![Swan](./assets/Swan.png)
+
+</div>
+
+A powerful full-stack AI-powered quote generator with a stunning React frontend and FastAPI backend. Generate inspirational, motivational, and creative quotes on demand using Google's Gemini AI.
 
 ## Features
 
+### Backend
 - **AI-Powered Generation**: Uses Google's Gemini AI to create original, meaningful quotes
-- **Multiple Categories**: Support for motivation, inspiration, wisdom, humor, love, and more
+- **Multiple Categories**: Support for motivation, inspiration, wisdom, humor, love, success, life, friendship, happiness, and random
 - **Customizable**: Specify topic, style, and length for personalized quotes
 - **RESTful API**: Clean, well-documented API endpoints
 - **Fast & Async**: Built with FastAPI for high performance
-- **Interactive Docs**: Automatic Swagger UI and ReDoc documentation
+- **Interactive Docs**: Automatic Swagger UI documentation
+- **Serverless Ready**: Optimized for Vercel deployment with Mangum adapter
+
+### Frontend
+- **Modern React UI**: Beautiful, responsive interface built with React 18
+- **Animated Background**: Dynamic particle effects for visual appeal
+- **Mobile-First Design**: Fully responsive layout optimized for all devices
+- **Tailwind CSS**: Modern, utility-first styling with custom purple theme
+- **Real-time Feedback**: Loading states and error handling
+- **Copy to Clipboard**: Easy quote sharing functionality
+- **Smooth Animations**: Framer Motion for fluid transitions
 
 ## Project Structure
 
@@ -17,78 +36,166 @@ A powerful AI-powered quote generator built with FastAPI. Generate inspirational
 ai_quote_generator/
 ├── app/
 │   ├── __init__.py
-│   ├── config.py              # Configuration settings
+│   ├── config.py                # Configuration settings
+│   ├── main.py                  # FastAPI app with CORS & static serving
 │   └── api/
 │       ├── __init__.py
-│       ├── controllers/       # Business logic
+│       ├── controllers/         # Business logic
 │       │   ├── __init__.py
 │       │   └── quote_controller.py
-│       ├── models/            # Pydantic models
+│       ├── models/              # Pydantic models
 │       │   ├── __init__.py
 │       │   └── quote_models.py
-│       ├── routes/            # API endpoints
+│       ├── routes/              # API endpoints
 │       │   ├── __init__.py
 │       │   └── quote_routes.py
-│       └── utils/             # Helper functions
+│       └── utils/               # Helper functions
 │           ├── __init__.py
 │           ├── ai_client.py
 │           └── prompt_builder.py
-├── main.py                    # Application entry point
-├── requirements.txt           # Python dependencies
-├── .env.example              # Example environment variables
-└── README.md                 # This file
+├── static/                      # React frontend
+│   ├── package.json
+│   ├── tailwind.config.js
+│   ├── src/
+│   │   ├── App.js
+│   │   ├── index.js
+│   │   └── components/
+│   │       ├── AnimatedBackground.js  # Canvas-based particle effects
+│   │       ├── QuoteGenerator.js      # Main UI component
+│   │       ├── FluidCursor.js         # Custom cursor effects
+│   │       └── Navigation.js
+│   └── build/                   # Production build (served by FastAPI)
+├── api/
+│   └── index.py                 # Vercel serverless entry point
+├── main.py                      # Local development entry point
+├── Dockerfile                   # Multi-stage production container
+├── docker-compose.yml           # Development environment
+├── docker-compose.prod.yml      # Production environment
+├── requirements.txt             # Python dependencies
+└── README.md                    # This file
 ```
 
 ## Installation
 
 ### Prerequisites
 
-- Python 3.8+
+- Python 3.11+
+- Node.js 18+ and npm
 - Google Gemini API key ([Get one here](https://makersuite.google.com/app/apikey))
 
-### Setup Steps
+### Backend Setup
 
 1. **Clone the repository**
    ```bash
+   git clone https://github.com/1AyaNabil1/Swan_Quote_Generator.git
    cd ai_quote_generator
    ```
 
 2. **Create a virtual environment**
    ```bash
-   python -m venv venv
+   python3 -m venv venv
    source venv/bin/activate  # On Windows: venv\Scripts\activate
    ```
 
-3. **Install dependencies**
+3. **Install Python dependencies**
    ```bash
    pip install -r requirements.txt
    ```
 
 4. **Set up environment variables**
-   ```bash
-   cp .env.example .env
-   ```
-   
-   Edit `.env` and add your Gemini API key:
-   ```
+   Create a `.env` file in the root directory:
+   ```env
    GEMINI_API_KEY=your_actual_api_key_here
+   APP_NAME=Swan Quote Generator
+   APP_VERSION=1.0.0
+   DEBUG=True
    ```
 
-5. **Run the application**
+### Frontend Setup
+
+1. **Navigate to the static directory**
    ```bash
-   python main.py
+   cd static
    ```
 
-   Or using uvicorn directly:
+2. **Install npm dependencies**
    ```bash
-   uvicorn main:app --reload --host 0.0.0.0 --port 8000
+   npm install
    ```
+
+3. **Build the React app**
+   ```bash
+   npm run build
+   ```
+
+4. **Return to the root directory**
+   ```bash
+   cd ..
+   ```
+
+### Running the Application
+
+#### Option 1: Local Development (Backend Only)
+```bash
+python3 main.py
+```
+The API will be available at `http://localhost:8000`
+
+#### Option 2: Full Stack Development
+```bash
+# Terminal 1 - Run FastAPI backend
+python3 main.py
+
+# Terminal 2 - Run React dev server
+cd static
+npm start
+```
+- Backend: `http://localhost:8000`
+- Frontend: `http://localhost:3000`
+
+#### Option 3: Production Mode (Integrated)
+```bash
+# Build React app first
+cd static
+npm run build
+cd ..
+
+# Run FastAPI with built frontend
+python3 main.py
+```
+Access the full application at `http://localhost:8000`
+
+#### Option 4: Docker
+```bash
+# Development
+docker-compose up
+
+# Production
+docker-compose -f docker-compose.prod.yml up
+```
 
 ## Usage
 
+### Web Interface
+
+Once the application is running, open your browser to `http://localhost:8000` to access the beautiful Swan interface:
+
+1. **Select a Category**: Choose from motivation, inspiration, wisdom, humor, love, success, life, friendship, happiness, or random
+2. **Add Optional Topic**: Specify a specific topic like "perseverance" or "courage"
+3. **Add Optional Style**: Define a writing style like "Shakespeare" or "modern"
+4. **Generate**: Click the "Generate Quote" button
+5. **Copy & Share**: Use the "Copy Quote" button to copy the generated quote to your clipboard
+
+The interface features:
+- Responsive mobile-first design
+- Animated particle background
+- Smooth transitions and hover effects
+- Real-time loading states
+- Error handling with user-friendly messages
+
 ### API Endpoints
 
-Once the server is running, access the API at `http://localhost:8000`
+The backend provides RESTful API endpoints accessible at `http://localhost:8000`
 
 #### 1. Generate Custom Quote
 **POST** `/api/quotes/generate`
@@ -158,8 +265,15 @@ Check API health status.
 
 ### Interactive Documentation
 
-- **Swagger UI**: http://localhost:8000/docs
-- **ReDoc**: http://localhost:8000/redoc
+- **Swagger UI**: http://localhost:8000/docs (available in development mode)
+
+### Frontend Technologies
+
+- **React 18**: Modern React with hooks
+- **Tailwind CSS**: Utility-first CSS framework with custom purple theme
+- **Framer Motion**: Smooth animations and transitions
+- **Canvas API**: Custom particle animation background
+- **Responsive Design**: Mobile-first approach with breakpoints for tablets and desktops
 
 ## Configuration
 
@@ -228,29 +342,133 @@ print(response.json())
 
 ### Running in Development Mode
 
+#### Backend Development
 ```bash
-uvicorn main:app --reload --host 0.0.0.0 --port 8000
+# Auto-reload on file changes
+python3 main.py
+```
+The `--reload` flag is built into `main.py` for development.
+
+#### Frontend Development
+```bash
+cd static
+npm start
+```
+React dev server with hot-reload at `http://localhost:3000`
+
+#### Full Stack Development
+Run both backend and frontend simultaneously:
+```bash
+# Terminal 1
+python3 main.py
+
+# Terminal 2
+cd static && npm start
 ```
 
-The `--reload` flag enables auto-reload on code changes.
+### Building for Production
+
+```bash
+# Build React frontend
+cd static
+npm run build
+cd ..
+
+# The FastAPI app will automatically serve the built frontend
+python3 main.py
+```
 
 ### Running Tests
 
 ```bash
+# Python tests
 pytest tests/
+
+# Frontend tests
+cd static
+npm test
 ```
 
 ## Docker Support
 
-Build and run with Docker:
+### Development Environment
+```bash
+docker-compose up
+```
 
+### Production Environment
+```bash
+# Build and run optimized production container
+docker-compose -f docker-compose.prod.yml up --build
+```
+
+### Manual Docker Commands
 ```bash
 # Build image
-docker build -t ai-quote-generator .
+docker build -t swan-quote-generator .
 
 # Run container
-docker run -p 8000:8000 --env-file .env ai-quote-generator
+docker run -p 8000:8000 --env-file .env swan-quote-generator
 ```
+
+The Dockerfile uses multi-stage builds for optimized image size and security.
+
+## Deployment
+
+### Vercel Deployment
+
+This application is optimized for Vercel serverless deployment:
+
+1. **Prerequisites**: Vercel account and CLI installed
+   ```bash
+   npm i -g vercel
+   ```
+
+2. **Configure Environment Variables**
+   Add `GEMINI_API_KEY` to your Vercel project settings
+
+3. **Deploy**
+   ```bash
+   vercel --prod
+   ```
+
+The `api/index.py` file provides the Mangum adapter for serverless compatibility.
+
+### Traditional Hosting
+
+For traditional hosting (VPS, cloud VM):
+
+1. Build the frontend:
+   ```bash
+   cd static && npm run build && cd ..
+   ```
+
+2. Run with gunicorn or uvicorn:
+   ```bash
+   uvicorn app.main:app --host 0.0.0.0 --port 8000
+   ```
+
+3. Use nginx as a reverse proxy (recommended)
+
+## UI Features
+
+### Animated Background
+- Dynamic particle system using HTML5 Canvas
+- Smooth animations with 60fps performance
+- Responsive to screen size changes
+- Purple-themed particles with pulsing effects
+
+### Responsive Design
+- **Mobile**: Vertical layout with controls at top
+- **Tablet**: Optimized spacing and font sizes
+- **Desktop**: Two-column layout with quote display and controls side-by-side
+
+### Color Scheme
+- **Primary Purple**: `#9333ea`
+- **Purple Accent**: `#a78bfa`
+- **Purple Light**: `#c4b5fd`
+- **Background**: Black with gradient overlays
+- **Text**: White with varying opacity levels
 
 ## API Models
 
@@ -270,9 +488,47 @@ docker run -p 8000:8000 --env-file .env ai-quote-generator
 
 Contributions are welcome! Please feel free to submit a Pull Request.
 
+### Development Workflow
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Make your changes
+4. Test thoroughly (backend and frontend)
+5. Commit your changes (`git commit -m 'Add amazing feature'`)
+6. Push to the branch (`git push origin feature/amazing-feature`)
+7. Open a Pull Request
+
+## Tech Stack
+
+### Backend
+- **FastAPI**: Modern Python web framework
+- **Google Gemini AI**: AI model for quote generation
+- **Pydantic**: Data validation
+- **Uvicorn**: ASGI server
+
+### Frontend
+- **React 18**: UI framework
+- **Tailwind CSS**: Utility-first CSS
+- **Framer Motion**: Animation library
+- **HTML5 Canvas**: Custom animations
+
+### DevOps
+- **Docker**: Containerization
+- **Docker Compose**: Multi-container orchestration
+- **Render**: Serverless deployment platform
+
+## License
+
+This project is open source and available under the MIT License.
+
+## Credits & Links
+
+- **Built by**: [AyaNexus](https://ayanexus.dev/) 🦢
+- **GitHub Repository**: [Swan_Quote_Generator](https://github.com/1AyaNabil1/Swan_Quote_Generator)
+- **Live Demo**: [Swan](https://swanexus.dev)
+- **Powered by**: Google Gemini AI
+
 ---
 
 <div align="center">
-  <em>Built by AyaNexus 🦢</em>
+  <p><em>Built by AyaNexus 🦢</em></p>
 </div>
-# Vercel fix
