@@ -92,7 +92,7 @@ const QuoteGenerator = () => {
             Swan
           </h1>
           <p className="text-white/60 text-sm md:text-base lg:text-lg max-w-xl font-light tracking-wide px-4" style={{ fontFamily: "'Courier New', 'Courier', monospace" }}>
-            AI quote generator to tailor your mood and preferences
+            Because sometimes, the right words can light the stars inside you
           </p>
         </div>
       </div>
