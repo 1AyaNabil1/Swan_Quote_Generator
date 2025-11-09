@@ -17,12 +17,22 @@ module.exports = {
         'float': 'float 6s ease-in-out infinite',
         'float-delayed': 'float 8s ease-in-out infinite',
         'pulse-slow': 'pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+        'slide-in': 'slideIn 0.3s ease-out forwards',
+        'fade-out': 'fadeOut 0.3s ease-in forwards',
       },
       keyframes: {
         float: {
           '0%, 100%': { transform: 'translateY(0px)' },
           '50%': { transform: 'translateY(-20px)' },
-        }
+        },
+        slideIn: {
+          '0%': { transform: 'translateX(100%)' },
+          '100%': { transform: 'translateX(0)' },
+        },
+        fadeOut: {
+          '0%': { opacity: 1 },
+          '100%': { opacity: 0 },
+        },
       }
     },
   },
