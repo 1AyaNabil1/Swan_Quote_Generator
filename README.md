@@ -24,12 +24,15 @@ A powerful full-stack AI-powered quote generator with a stunning React frontend 
 
 ### Frontend
 - **Modern React UI**: Beautiful, responsive interface built with React 18
+- **RTL Support**: Automatic right-to-left layout for Arabic text with proper text direction
+- **Arabic Typography**: Beautiful Arabic fonts (Amiri for quotes, Cairo for UI) with optimized line spacing
+- **Bilingual UI**: All interface elements (buttons, placeholders) adapt to the selected language
 - **Language Selection**: Easy language switching between English and Arabic quote generation
 - **Animated Background**: Dynamic particle effects for visual appeal
 - **Mobile-First Design**: Fully responsive layout optimized for all devices
 - **Tailwind CSS**: Modern, utility-first styling with custom purple theme
 - **Real-time Feedback**: Loading states and error handling
-- **Copy to Clipboard**: Easy quote sharing functionality
+- **Copy to Clipboard**: Easy quote sharing functionality (نسخ الاقتباس / Copy Quote)
 - **Smooth Animations**: Framer Motion for fluid transitions
 
 ## Project Structure
@@ -187,10 +190,11 @@ Once the application is running, open your browser to `http://localhost:8000` to
 3. **Add Optional Topic**: Specify a specific topic like "perseverance" or "courage"
 4. **Add Optional Style**: Define a writing style like "Shakespeare" or "modern"
 5. **Generate**: Click the "Generate Quote" button
-6. **Copy & Share**: Use the "Copy Quote" button to copy the generated quote to your clipboard
+6. **Copy & Share**: Use the "Copy Quote" / "نسخ الاقتباس" button to copy the generated quote to your clipboard
 
 The interface features:
-- Bilingual quote generation (English/Arabic)
+- Fully bilingual interface (English/Arabic) with automatic RTL layout
+- All UI elements (buttons, placeholders) automatically translate based on selected language
 - Beautiful Arabic fonts (Amiri for quotes, Cairo for UI) automatically applied for Arabic text
 - Responsive mobile-first design
 - Animated particle background
