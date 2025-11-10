@@ -4,6 +4,7 @@ mangum==0.17.0
 pydantic==2.8.2
 pydantic-settings==2.1.0
 python-dotenv==1.0.0
-google-generativeai==0.3.2
+google-generativeai==0.8.5
 python-multipart==0.0.6
 tenacity==8.2.3
+ruff>=0.8.0

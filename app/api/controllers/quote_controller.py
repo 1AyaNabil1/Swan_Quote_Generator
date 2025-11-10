@@ -1,15 +1,18 @@
-from datetime import datetime
-from app.api.models import QuoteRequest, QuoteResponse, QuoteCategory
-from app.api.utils import AIClient, PromptBuilder
 import logging
+from datetime import datetime
+
+from app.api.models import QuoteCategory, QuoteRequest, QuoteResponse
+from app.api.utils import AIClient, PromptBuilder
+
 
 logger = logging.getLogger(__name__)
+
 
 class QuoteController:
     def __init__(self):
         self._ai_client = None
         self.prompt_builder = PromptBuilder()
-    
+
     @property
     def ai_client(self):
         """Lazy initialization of AIClient to avoid startup errors."""
@@ -24,21 +27,20 @@ class QuoteController:
             category=request.category.value,
             topic=request.topic,
             style=request.style,
-            length=request.length or "medium"
+            length=request.length or "medium",
+            language=request.language or "en",
         )
         # Combine system and user prompts for Gemini
         combined_prompt = f"{system_prompt}\n\n{user_prompt}"
-        
+
         quote_text = await self.ai_client.generate_quote(
-            prompt=combined_prompt,
-            max_tokens=request.max_tokens,
-            temperature=request.temperature
+            prompt=combined_prompt, max_tokens=request.max_tokens, temperature=request.temperature
         )
         return QuoteResponse(
             quote=quote_text,
             author="Swan",
             category=request.category.value,
-            timestamp=datetime.utcnow().isoformat() + "Z"
+            timestamp=datetime.utcnow().isoformat() + "Z",
         )
 
     async def get_random_quote(self) -> QuoteResponse:
