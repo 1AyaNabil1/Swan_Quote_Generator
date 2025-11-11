@@ -6,6 +6,7 @@ const QuoteGenerator = () => {
   const [category, setCategory] = useState('motivation');
   const [topic, setTopic] = useState('');
   const [style, setStyle] = useState('');
+  const [language, setLanguage] = useState('en');
   const [loading, setLoading] = useState(false);
 
   const categories = [
@@ -18,9 +19,10 @@ const QuoteGenerator = () => {
     try {
       const requestBody = {
         category,
-        length: 'medium'
+        length: 'medium',
+        language: language
       };
-      
+
       // Only include topic and style if they have values
       if (topic && topic.trim()) {
         requestBody.topic = topic.trim();
@@ -104,26 +106,46 @@ const QuoteGenerator = () => {
           <div className="flex items-center justify-center order-2 lg:order-1">
             <div className="w-full max-w-2xl border border-purple-primary/20 rounded-xl md:rounded-2xl p-4 md:p-8 lg:p-12 min-h-[180px] md:min-h-[280px] flex items-center justify-center bg-gradient-to-br from-purple-primary/20 via-purple-accent/10 to-transparent backdrop-blur-sm">
               {quote ? (
-                <div className="space-y-3 md:space-y-6 w-full">
-                  <div className="text-lg md:text-2xl lg:text-3xl font-serif text-white/90 leading-relaxed italic" style={{ fontFamily: "'Crimson Text', 'Georgia', serif" }}>
+                <div className="space-y-3 md:space-y-6 w-full" dir={language === 'ar' ? 'rtl' : 'ltr'}>
+                  <div
+                    className="text-lg md:text-2xl lg:text-3xl font-serif text-white/90 leading-relaxed"
+                    style={{
+                      fontFamily: language === 'ar' ? "'Amiri', 'Georgia', serif" : "'Crimson Text', 'Georgia', serif",
+                      fontStyle: language === 'ar' ? 'normal' : 'italic',
+                      lineHeight: language === 'ar' ? '2' : '1.6'
+                    }}
+                  >
                     "{quote}"
                   </div>
                   {author && (
-                    <div className="text-right text-sm md:text-base text-purple-light/80 font-light">
+                    <div
+                      className="text-sm md:text-base text-purple-light/80 font-light"
+                      style={{
+                        textAlign: language === 'ar' ? 'left' : 'right',
+                        fontFamily: language === 'ar' ? "'Cairo', sans-serif" : "'Poppins', 'Inter', sans-serif"
+                      }}
+                    >
                       — {author}
                     </div>
                   )}
-                  <button 
+                  <button
                     onClick={handleCopyQuote}
-                    className="mt-3 md:mt-6 px-4 md:px-5 py-2 bg-purple-primary/20 hover:bg-purple-primary/30 border border-purple-primary/40 rounded-lg text-white text-xs md:text-sm font-light transition-all w-full md:w-auto" style={{ fontFamily: "'Poppins', 'Inter', sans-serif" }}
+                    className="mt-3 md:mt-6 px-4 md:px-5 py-2 bg-purple-primary/20 hover:bg-purple-primary/30 border border-purple-primary/40 rounded-lg text-white text-xs md:text-sm font-light transition-all w-full md:w-auto"
+                    style={{ fontFamily: language === 'ar' ? "'Cairo', sans-serif" : "'Poppins', 'Inter', sans-serif" }}
                   >
-                    Copy Quote
+                    {language === 'ar' ? 'نسخ الاقتباس' : 'Copy Quote'}
                   </button>
                 </div>
               ) : (
-                <div className="text-center">
-                  <p className="text-base md:text-xl text-white/30 italic font-light" style={{ fontFamily: "'Crimson Text', 'Georgia', serif" }}>
-                    Your quote will appear here...
+                <div className="text-center" dir={language === 'ar' ? 'rtl' : 'ltr'}>
+                  <p
+                    className="text-base md:text-xl text-white/30 font-light"
+                    style={{
+                      fontFamily: language === 'ar' ? "'Amiri', 'Georgia', serif" : "'Crimson Text', 'Georgia', serif",
+                      fontStyle: language === 'ar' ? 'normal' : 'italic'
+                    }}
+                  >
+                    {language === 'ar' ? 'سيظهر اقتباسك هنا...' : 'Your quote will appear here...'}
                   </p>
                 </div>
               )}
@@ -154,6 +176,27 @@ const QuoteGenerator = () => {
                       {cat.charAt(0).toUpperCase() + cat.slice(1)}
                     </option>
                   ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-white/70 font-light mb-1.5 md:mb-2 text-xs md:text-sm">
+                  Language
+                </label>
+                <select
+                  value={language}
+                  onChange={(e) => setLanguage(e.target.value)}
+                  className="w-full px-3 md:px-4 py-2 md:py-2.5 bg-black/30 border border-purple-primary/30 rounded-lg text-white text-sm focus:outline-none focus:border-purple-accent transition-all appearance-none pr-8 cursor-pointer"
+                  style={{
+                    fontFamily: "'Poppins', 'Inter', sans-serif",
+                    backgroundImage: "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20' stroke='%23a78bfa'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M6 8l4 4 4-4'%3E%3C/path%3E%3C/svg%3E\")",
+                    backgroundRepeat: 'no-repeat',
+                    backgroundPosition: 'right 0.75rem center',
+                    backgroundSize: '1rem'
+                  }}
+                >
+                  <option value="en" className="bg-black">English</option>
+                  <option value="ar" className="bg-black">العربية (Arabic)</option>
                 </select>
               </div>
 

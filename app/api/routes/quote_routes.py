@@ -1,8 +1,10 @@
-from fastapi import APIRouter, HTTPException, status, Request, Depends
-from app.api.models import QuoteRequest, QuoteResponse, ErrorResponse, QuoteCategory
-from app.api.controllers import QuoteController
 import logging
-from app.config import settings
+
+from fastapi import APIRouter, HTTPException, status
+
+from app.api.controllers import QuoteController
+from app.api.models import ErrorResponse, QuoteCategory, QuoteRequest, QuoteResponse
+
 
 # Disable rate limiting for serverless - Redis not available
 # try:
@@ -20,12 +22,14 @@ router = APIRouter(prefix="/api/quotes", tags=["quotes"])
 # Lazy initialization of controller
 _controller = None
 
+
 def get_controller() -> QuoteController:
     """Get or create the QuoteController instance."""
     global _controller
     if _controller is None:
         _controller = QuoteController()
     return _controller
+
 
 # Initialize rate limiter (only if Redis is configured)
 async def init_rate_limiter():
@@ -34,8 +38,10 @@ async def init_rate_limiter():
     logger.info("Rate limiter disabled for serverless deployment")
     return
 
+
 # Rate limiter disabled for serverless
 # rate_limiter = RateLimiter(times=10, seconds=60) if settings.debug else RateLimiter(times=10, seconds=60)
+
 
 @router.post(
     "/generate",
@@ -47,8 +53,8 @@ async def init_rate_limiter():
         200: {"description": "Quote generated successfully"},
         400: {"model": ErrorResponse, "description": "Invalid request parameters"},
         429: {"model": ErrorResponse, "description": "Rate limit exceeded"},
-        500: {"model": ErrorResponse, "description": "Internal server error"}
-    }
+        500: {"model": ErrorResponse, "description": "Internal server error"},
+    },
     # Temporarily disabled rate limiting
     # dependencies=[Depends(rate_limiter)] if settings.debug else [Depends(rate_limiter)]
 )
@@ -58,17 +64,14 @@ async def generate_quote(request: QuoteRequest) -> QuoteResponse:
         controller = get_controller()
         return await controller.generate_quote(request)
     except ValueError as e:
-        logger.error(f"Validation error: {str(e)}")
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(e)
-        )
+        logger.error(f"Validation error: {e!s}")
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)) from e
     except Exception as e:
-        logger.error(f"Error generating quote: {str(e)}", exc_info=True)
+        logger.error(f"Error generating quote: {e!s}", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to generate quote: {str(e)}"
-        )
+            detail=f"Failed to generate quote: {e!s}",
+        ) from e
 
 
 @router.get(
@@ -80,8 +83,8 @@ async def generate_quote(request: QuoteRequest) -> QuoteResponse:
     responses={
         200: {"description": "Quote generated successfully"},
         429: {"model": ErrorResponse, "description": "Rate limit exceeded"},
-        500: {"model": ErrorResponse, "description": "Internal server error"}
-    }
+        500: {"model": ErrorResponse, "description": "Internal server error"},
+    },
 )
 async def get_random_quote() -> QuoteResponse:
     try:
@@ -89,17 +92,14 @@ async def get_random_quote() -> QuoteResponse:
         controller = get_controller()
         return await controller.get_random_quote()
     except ValueError as e:
-        logger.error(f"Validation error: {str(e)}")
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(e)
-        )
+        logger.error(f"Validation error: {e!s}")
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)) from e
     except Exception as e:
-        logger.error(f"Error generating random quote: {str(e)}")
+        logger.error(f"Error generating random quote: {e!s}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to generate quote: {str(e)}"
-        )
+            detail=f"Failed to generate quote: {e!s}",
+        ) from e
 
 
 @router.get(
@@ -107,7 +107,7 @@ async def get_random_quote() -> QuoteResponse:
     response_model=list[str],
     status_code=status.HTTP_200_OK,
     summary="Get available categories",
-    description="Retrieve a list of all available quote categories."
+    description="Retrieve a list of all available quote categories.",
 )
 async def get_categories() -> list[str]:
     """

@@ -44,6 +44,9 @@ htmlcov/
 *.cover
 .cache
 
+# Linting
+.ruff_cache/
+
 # Logs
 *.log
 logs/

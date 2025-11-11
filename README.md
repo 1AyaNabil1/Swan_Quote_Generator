@@ -1,6 +1,6 @@
 <div align="center">
 
-# Swan - Quote Generator 
+# Swan - Quote Generator
 Because sometimes, the right words can light the stars inside you | [Website](https://www.swanexus.dev)
 
 
@@ -14,8 +14,9 @@ A powerful full-stack AI-powered quote generator with a stunning React frontend 
 
 ### Backend
 - **AI-Powered Generation**: Uses Google's Gemini AI to create original, meaningful quotes
+- **Bilingual Support**: Generate quotes in English and Arabic (AR) with proper language handling
 - **Multiple Categories**: Support for motivation, inspiration, wisdom, humor, love, success, life, friendship, happiness, and random
-- **Customizable**: Specify topic, style, and length for personalized quotes
+- **Customizable**: Specify topic, style, language, and length for personalized quotes
 - **RESTful API**: Clean, well-documented API endpoints
 - **Fast & Async**: Built with FastAPI for high performance
 - **Interactive Docs**: Automatic Swagger UI documentation
@@ -23,11 +24,15 @@ A powerful full-stack AI-powered quote generator with a stunning React frontend 
 
 ### Frontend
 - **Modern React UI**: Beautiful, responsive interface built with React 18
+- **RTL Support**: Automatic right-to-left layout for Arabic text with proper text direction
+- **Arabic Typography**: Beautiful Arabic fonts (Amiri for quotes, Cairo for UI) with optimized line spacing
+- **Bilingual UI**: All interface elements (buttons, placeholders) adapt to the selected language
+- **Language Selection**: Easy language switching between English and Arabic quote generation
 - **Animated Background**: Dynamic particle effects for visual appeal
 - **Mobile-First Design**: Fully responsive layout optimized for all devices
 - **Tailwind CSS**: Modern, utility-first styling with custom purple theme
 - **Real-time Feedback**: Loading states and error handling
-- **Copy to Clipboard**: Easy quote sharing functionality
+- **Copy to Clipboard**: Easy quote sharing functionality (نسخ الاقتباس / Copy Quote)
 - **Smooth Animations**: Framer Motion for fluid transitions
 
 ## Project Structure
@@ -181,12 +186,16 @@ docker-compose -f docker-compose.prod.yml up
 Once the application is running, open your browser to `http://localhost:8000` to access the beautiful Swan interface:
 
 1. **Select a Category**: Choose from motivation, inspiration, wisdom, humor, love, success, life, friendship, happiness, or random
-2. **Add Optional Topic**: Specify a specific topic like "perseverance" or "courage"
-3. **Add Optional Style**: Define a writing style like "Shakespeare" or "modern"
-4. **Generate**: Click the "Generate Quote" button
-5. **Copy & Share**: Use the "Copy Quote" button to copy the generated quote to your clipboard
+2. **Select Language**: Choose English or (Arabic) for quote generation
+3. **Add Optional Topic**: Specify a specific topic like "perseverance" or "courage"
+4. **Add Optional Style**: Define a writing style like "Shakespeare" or "modern"
+5. **Generate**: Click the "Generate Quote" button
+6. **Copy & Share**: Use the "Copy Quote" / "نسخ الاقتباس" button to copy the generated quote to your clipboard
 
 The interface features:
+- Fully bilingual interface (English/Arabic) with automatic RTL layout
+- All UI elements (buttons, placeholders) automatically translate based on selected language
+- Beautiful Arabic fonts (Amiri for quotes, Cairo for UI) automatically applied for Arabic text
 - Responsive mobile-first design
 - Animated particle background
 - Smooth transitions and hover effects
@@ -208,9 +217,12 @@ Generate a quote with custom parameters.
   "category": "motivation",
   "topic": "perseverance",
   "style": "modern",
-  "length": "medium"
+  "length": "medium",
+  "language": "en"
 }
 ```
+
+**Note**: `language` can be `"en"` (English) or `"ar"` (Arabic)
 
 **Response:**
 ```json
@@ -299,14 +311,24 @@ TEMPERATURE=0.8
 ## Example Usage with cURL
 
 ```bash
-# Generate a custom quote
+# Generate a custom quote in English
 curl -X POST "http://localhost:8000/api/quotes/generate" \
   -H "Content-Type: application/json" \
   -d '{
     "category": "motivation",
     "topic": "success",
     "style": "modern",
-    "length": "short"
+    "length": "short",
+    "language": "en"
+  }'
+
+# Generate a quote in Arabic
+curl -X POST "http://localhost:8000/api/quotes/generate" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "category": "motivation",
+    "topic": "نجاح",
+    "language": "ar"
   }'
 
 # Get a random quote
@@ -321,14 +343,26 @@ curl "http://localhost:8000/api/quotes/categories"
 ```python
 import requests
 
-# Generate custom quote
+# Generate custom quote in English
 response = requests.post(
     "http://localhost:8000/api/quotes/generate",
     json={
         "category": "inspiration",
         "topic": "creativity",
         "style": "philosophical",
-        "length": "medium"
+        "length": "medium",
+        "language": "en"
+    }
+)
+print(response.json())
+
+# Generate custom quote in Arabic
+response = requests.post(
+    "http://localhost:8000/api/quotes/generate",
+    json={
+        "category": "inspiration",
+        "topic": "إبداع",
+        "language": "ar"
     }
 )
 print(response.json())
@@ -339,6 +373,48 @@ print(response.json())
 ```
 
 ## Development
+
+### Code Quality & Linting
+
+This project uses **Ruff** - a fast Python linter and formatter written in Rust.
+
+#### Install Development Dependencies
+```bash
+pip install -r requirements-dev.txt
+```
+
+#### Running Ruff
+
+**Check for linting issues:**
+```bash
+ruff check .
+```
+
+**Auto-fix issues:**
+```bash
+ruff check --fix .
+```
+
+**Format code:**
+```bash
+ruff format .
+```
+
+**Check and fix everything:**
+```bash
+ruff check --fix . && ruff format .
+```
+
+#### Ruff Configuration
+
+The project is configured via `pyproject.toml` with the following rules:
+- Line length: 100 characters
+- Target: Python 3.11+
+- Import sorting (isort)
+- Code modernization (pyupgrade)
+- Bug detection (flake8-bugbear)
+- Code simplification rules
+- Auto-fix enabled for all rules
 
 ### Running in Development Mode
 
@@ -477,6 +553,7 @@ For traditional hosting (VPS, cloud VM):
 - `topic` (string, optional): Specific topic for the quote
 - `style` (string, optional): Writing style (e.g., 'Shakespeare', 'modern')
 - `length` (string): Desired length ('short', 'medium', or 'long')
+- `language` (string, optional): Language for quote generation - 'en' (English) or 'ar' (Arabic). Defaults to 'en'
 
 ### QuoteResponse
 - `quote` (string): The generated quote
