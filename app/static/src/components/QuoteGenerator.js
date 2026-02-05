@@ -9,7 +9,7 @@ const QuoteGenerator = () => {
   const [loading, setLoading] = useState(false);
 
   const categories = [
-    'motivation', 'inspiration', 'wisdom', 'humor', 
+    'motivation', 'inspiration', 'wisdom', 'humor',
     'love', 'success', 'life', 'friendship', 'happiness', 'random'
   ];
 
@@ -20,7 +20,7 @@ const QuoteGenerator = () => {
         category,
         length: 'medium'
       };
-      
+
       // Only include topic and style if they have values
       if (topic && topic.trim()) {
         requestBody.topic = topic.trim();
@@ -36,7 +36,7 @@ const QuoteGenerator = () => {
         },
         body: JSON.stringify(requestBody),
       });
-      
+
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
         throw new Error(errorData.detail || `HTTP ${response.status}`);
@@ -61,6 +61,22 @@ const QuoteGenerator = () => {
     }
   };
 
+  const handleShareQuote = (platform) => {
+    if (!quote) return;
+
+    const quoteText = `"${quote}" - ${author}`;
+    const encodedQuote = encodeURIComponent(quoteText);
+
+    let shareUrl = '';
+    if (platform === 'x') {
+      shareUrl = `https://twitter.com/intent/tweet?text=${encodedQuote}`;
+    } else if (platform === 'facebook') {
+      shareUrl = `https://www.facebook.com/sharer/sharer.php?quote=${encodedQuote}`;
+    }
+
+    window.open(shareUrl, '_blank', 'width=600,height=400');
+  };
+
   return (
     <div className="h-full flex flex-col">
       {/* Header */}
@@ -68,7 +84,7 @@ const QuoteGenerator = () => {
         <div className="flex items-center space-x-3">
           {/* Empty left side for balance */}
         </div>
-        <a 
+        <a
           href="https://github.com/1AyaNabil1/Ai-Quotes-Generator"
           target="_blank"
           rel="noopener noreferrer"
@@ -112,12 +128,28 @@ const QuoteGenerator = () => {
                     — {author}
                   </div>
                 )}
-                <button 
-                  onClick={handleCopyQuote}
-                  className="mt-6 px-5 py-2 bg-purple-primary/20 hover:bg-purple-primary/30 border border-purple-primary/40 rounded-lg text-white text-sm font-light transition-all" style={{ fontFamily: "'Poppins', 'Inter', sans-serif" }}
-                >
-                  Copy Quote
-                </button>
+                <div className="mt-6 flex flex-wrap gap-3">
+                  <button
+                    onClick={handleCopyQuote}
+                    className="px-5 py-2 bg-purple-primary/20 hover:bg-purple-primary/30 border border-purple-primary/40 rounded-lg text-white text-sm font-light transition-all" style={{ fontFamily: "'Poppins', 'Inter', sans-serif" }}
+                  >
+                    Copy Quote
+                  </button>
+                  <button
+                    onClick={() => handleShareQuote('x')}
+                    className="px-4 py-2 bg-black/40 hover:bg-black/60 border border-white/20 rounded-lg text-white text-sm font-light transition-all flex items-center gap-2" style={{ fontFamily: "'Poppins', 'Inter', sans-serif" }}
+                  >
+                    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" /></svg>
+                    Share on X
+                  </button>
+                  <button
+                    onClick={() => handleShareQuote('facebook')}
+                    className="px-4 py-2 bg-blue-600/30 hover:bg-blue-600/50 border border-blue-500/40 rounded-lg text-white text-sm font-light transition-all flex items-center gap-2" style={{ fontFamily: "'Poppins', 'Inter', sans-serif" }}
+                  >
+                    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" /></svg>
+                    Share on Facebook
+                  </button>
+                </div>
               </div>
             ) : (
               <div className="text-center">
@@ -194,9 +226,9 @@ const QuoteGenerator = () => {
       <footer className="text-center pb-6">
         <p className="text-white/60 text-sm font-light" style={{ fontFamily: "'Poppins', 'Inter', sans-serif" }}>
           Built by{' '}
-          <a 
-            href="https://ayanexus.dev/" 
-            target="_blank" 
+          <a
+            href="https://ayanexus.dev/"
+            target="_blank"
             rel="noopener noreferrer"
             className="text-purple-light hover:text-purple-accent transition-colors font-medium"
           >
