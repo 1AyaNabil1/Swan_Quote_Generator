@@ -107,12 +107,7 @@ const QuoteGenerator = () => {
       {/* Header */}
       <header className="flex items-center justify-between px-4 md:px-8 py-4 md:py-6">
         <div className="flex items-center space-x-3">
-          {/* Quote Counter Badge */}
-          {quoteCount > 0 && (
-            <div className="flex items-center space-x-2 px-3 py-1.5 bg-purple-primary/20 border border-purple-primary/40 rounded-full">
-              <span className="text-purple-light text-xs font-medium">✨ {quoteCount} quote{quoteCount !== 1 ? 's' : ''} generated</span>
-            </div>
-          )}
+          {/* Quote counter removed */}
         </div>
         <a
           href="https://github.com/1AyaNabil1/Ai-Quotes-Generator"
