@@ -20,6 +20,22 @@ jobs:
       - run: mypy
       - run: python -m pytest
 
+  frontend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: static
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: static/package-lock.json
+      - run: npm ci
+      - run: npm test -- --watchAll=false
+      - run: npm run build  # CI=true makes lint warnings fail the build
+
   docker:
     runs-on: ubuntu-latest
     steps:

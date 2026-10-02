@@ -1,4 +1,7 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
+import useQuoteHistory from '../hooks/useQuoteHistory';
+import HistoryPanel from './HistoryPanel';
+import ShareImage from './ShareImage';
 import { useToast } from './Toast';
 
 // Messages written in the browser; the server's own messages are in English
@@ -21,6 +24,11 @@ const MESSAGES = {
     ar: 'أنت غير متصل بالإنترنت. يحتاج Swan إلى اتصال لكتابة الاقتباسات.',
   },
   online: { en: 'Back online.', ar: 'عاد الاتصال بالإنترنت.' },
+  imageFailed: { en: "Couldn't create the image.", ar: 'تعذّر إنشاء الصورة.' },
+  history: { en: 'Your quotes', ar: 'اقتباساتك' },
+  favorite: { en: 'Add to favorites', ar: 'أضف إلى المفضلة' },
+  unfavorite: { en: 'Remove from favorites', ar: 'أزل من المفضلة' },
+  image: { en: 'Image', ar: 'صورة' },
   // Indexed by how many quotes are left this minute
   quotesLeft: [
     { en: 'That was your last quote for this minute.', ar: 'كان هذا آخر اقتباس لك في هذه الدقيقة.' },
@@ -30,15 +38,25 @@ const MESSAGES = {
 };
 
 const QuoteGenerator = () => {
-  const [quote, setQuote] = useState('');
-  const [author, setAuthor] = useState('');
+  const history = useQuoteHistory();
+  // Start from the last quote in this browser's history, if there is one
+  const [last] = useState(() => history.items[0]);
+  const [quote, setQuote] = useState(last?.quote ?? '');
+  const [author, setAuthor] = useState(last?.author ?? '');
   const [category, setCategory] = useState('motivation');
   const [topic, setTopic] = useState('');
   const [style, setStyle] = useState('');
   const [language, setLanguage] = useState('en');
-  const [quoteLanguage, setQuoteLanguage] = useState('en'); // what the shown quote is written in
+  const [quoteLanguage, setQuoteLanguage] = useState(last?.language ?? 'en'); // what the shown quote is written in
   const [loading, setLoading] = useState(false);
   const [showShareMenu, setShowShareMenu] = useState(false);
+  const [showHistory, setShowHistory] = useState(false);
+  const [showImage, setShowImage] = useState(false);
+  const [currentId, setCurrentId] = useState(last?.id ?? null); // the shown quote's history entry
+  const current = history.items.find((item) => item.id === currentId);
+  // Stable, so the dialogs' effects (focus, Escape) don't rerun on every render
+  const closeHistory = useCallback(() => setShowHistory(false), []);
+  const closeImage = useCallback(() => setShowImage(false), []);
   const toast = useToast();
   const dir = language === 'ar' ? 'rtl' : 'ltr';
 
@@ -91,6 +109,7 @@ const QuoteGenerator = () => {
           typeof errorData.detail === 'string' ? errorData.detail : 'Failed to generate quote.'
         );
         error.status = response.status;
+        error.requestId = response.headers.get('X-Request-ID');
         throw error;
       }
 
@@ -98,6 +117,14 @@ const QuoteGenerator = () => {
       setQuote(data.quote);
       setAuthor(data.author || 'Swan');
       setQuoteLanguage(requestBody.language);
+      setCurrentId(history.add({
+        quote: data.quote,
+        author: data.author || 'Swan',
+        category: data.category,
+        language: requestBody.language,
+        topic: requestBody.topic,
+        timestamp: data.timestamp,
+      }));
       toast.dismiss('generate');
 
       const left = response.headers.get('X-RateLimit-Remaining');
@@ -109,7 +136,9 @@ const QuoteGenerator = () => {
       if (error.status === 429) {
         toast.warning(error.message, { id: 'rate-limit' });
       } else if (error.status) {
-        toast.error(error.message, { id: 'generate' });
+        // A short reference for server-side failures, to find the request in the logs
+        const reference = error.status >= 500 && error.requestId ? ` (ref ${error.requestId.slice(0, 8)})` : '';
+        toast.error(error.message + reference, { id: 'generate' });
       } else {
         toast.error(MESSAGES.unreachable[language], { id: 'generate', dir });
       }
@@ -118,9 +147,9 @@ const QuoteGenerator = () => {
     }
   };
 
-  const copyQuote = async (copiedMessage) => {
+  const copyQuote = async (copiedMessage, item = { quote, author }) => {
     try {
-      await navigator.clipboard.writeText(`"${quote}" - ${author}`);
+      await navigator.clipboard.writeText(`"${item.quote}" - ${item.author}`);
       toast.success(copiedMessage[language], { dir });
     } catch (err) {
       toast.error(MESSAGES.copyFailed[language], { dir });
@@ -170,9 +199,18 @@ const QuoteGenerator = () => {
     <div className="h-full flex flex-col">
       {/* Header */}
       <header className="flex items-center justify-between px-4 md:px-8 py-4 md:py-6">
-        <div className="flex items-center space-x-3">
-          {/* Quote counter removed */}
-        </div>
+        <button
+          type="button"
+          onClick={() => setShowHistory(true)}
+          className="flex items-center gap-2 rounded-lg px-2 py-1.5 text-sm font-light text-white/60 transition-colors hover:text-white"
+          style={{ fontFamily: language === 'ar' ? "'Cairo', sans-serif" : "'Poppins', 'Inter', sans-serif" }}
+        >
+          <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} aria-hidden="true">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+          </svg>
+          {MESSAGES.history[language]}
+          {history.items.length > 0 && <span className="text-white/40">{history.items.length}</span>}
+        </button>
         <a
           href="https://github.com/1AyaNabil1/Swan_Quote_Generator"
           target="_blank"
@@ -232,12 +270,34 @@ const QuoteGenerator = () => {
                     </div>
                   )}
                   <div className="mt-3 md:mt-6 flex flex-wrap gap-2 md:gap-3">
+                    {current && (
+                      <button
+                        type="button"
+                        onClick={() => history.toggleFavorite(current.id)}
+                        aria-pressed={current.favorite}
+                        aria-label={(current.favorite ? MESSAGES.unfavorite : MESSAGES.favorite)[language]}
+                        title={(current.favorite ? MESSAGES.unfavorite : MESSAGES.favorite)[language]}
+                        className={`px-2.5 py-2 bg-purple-primary/20 hover:bg-purple-primary/30 border border-purple-primary/40 rounded-lg transition-all ${current.favorite ? 'text-amber-300' : 'text-white/70'}`}
+                      >
+                        <svg className="h-4 w-4" viewBox="0 0 24 24" fill={current.favorite ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth={1.5} aria-hidden="true">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M11.48 3.499a.562.562 0 0 1 1.04 0l2.125 5.111a.563.563 0 0 0 .475.345l5.518.442c.499.04.701.663.321.988l-4.204 3.602a.563.563 0 0 0-.182.557l1.285 5.385a.562.562 0 0 1-.84.61l-4.725-2.885a.562.562 0 0 0-.586 0L6.982 20.54a.562.562 0 0 1-.84-.61l1.285-5.386a.562.562 0 0 0-.182-.557l-4.204-3.602a.562.562 0 0 1 .321-.988l5.518-.442a.563.563 0 0 0 .475-.345L11.48 3.5Z" />
+                        </svg>
+                      </button>
+                    )}
                     <button
                       onClick={handleCopyQuote}
                       className="px-4 md:px-5 py-2 bg-purple-primary/20 hover:bg-purple-primary/30 border border-purple-primary/40 rounded-lg text-white text-xs md:text-sm font-light transition-all"
                       style={{ fontFamily: language === 'ar' ? "'Cairo', sans-serif" : "'Poppins', 'Inter', sans-serif" }}
                     >
                       {language === 'ar' ? 'نسخ الاقتباس' : 'Copy Quote'}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setShowImage(true)}
+                      className="px-4 md:px-5 py-2 bg-purple-primary/20 hover:bg-purple-primary/30 border border-purple-primary/40 rounded-lg text-white text-xs md:text-sm font-light transition-all"
+                      style={{ fontFamily: language === 'ar' ? "'Cairo', sans-serif" : "'Poppins', 'Inter', sans-serif" }}
+                    >
+                      {MESSAGES.image[language]}
                     </button>
                     <div className="relative">
                       <button
@@ -390,6 +450,26 @@ const QuoteGenerator = () => {
           </div>
         </div>
       </div>
+
+      <HistoryPanel
+        open={showHistory}
+        onClose={closeHistory}
+        items={history.items}
+        onToggleFavorite={history.toggleFavorite}
+        onRemove={history.remove}
+        onClear={history.clearHistory}
+        onCopy={(item) => copyQuote(MESSAGES.copied, item)}
+        language={language}
+      />
+      <ShareImage
+        open={showImage}
+        onClose={closeImage}
+        quote={quote}
+        author={author}
+        quoteLanguage={quoteLanguage}
+        language={language}
+        onDone={(result) => result === 'failed' && toast.error(MESSAGES.imageFailed[language], { dir })}
+      />
 
       <p className="sr-only" aria-live="polite">
         {quote && `${quote} — ${author}`}

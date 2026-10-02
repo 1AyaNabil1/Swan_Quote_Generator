@@ -31,7 +31,12 @@ where strangers type the input:
   circuit state; a request ID on every response and log line.
 - **Evaluation.** 63 cases measure quality, injection resistance and safety parity across
   English, MSA and Egyptian Arabic, with the guardrails on and off.
-- **Tests.** 162 tests with a fake Gemini, strict mypy, Ruff, and a Docker smoke test in CI.
+- **A frontend that shows it.** Errors, rate-limit warnings and connection loss appear as
+  accessible notifications with a reference to the request; quotes are kept in a searchable
+  history with favorites (in the browser only) and can be exported as images sized for
+  Instagram, stories or X, with Arabic laid out right to left.
+- **Tests.** 162 backend tests with a fake Gemini, frontend tests, strict mypy, Ruff, and a
+  Docker smoke test in CI.
 
 ## How a quote is made
 
