@@ -20,7 +20,10 @@ A powerful full-stack AI-powered quote generator with a stunning React frontend 
 - **RESTful API**: Clean, well-documented API endpoints
 - **Fast & Async**: Built with FastAPI for high performance
 - **Interactive Docs**: Automatic Swagger UI documentation
-- **Serverless Ready**: Optimized for Vercel deployment with Mangum adapter
+- **Safety filters on**: Gemini blocks harassment, hate speech, sexual and dangerous content rated medium risk or higher; a refused topic gets a clear message, not an error
+- **Rate limited**: Every quote is a Gemini call, so requests are limited per client and across the app
+- **Errors that are safe to show**: Gemini's own error text stays in the server log; users get a short message and the right status code
+- **Tested**: A pytest suite with a fake Gemini, run in CI together with Ruff and a Docker build
 
 ### Frontend
 - **Modern React UI**: Beautiful, responsive interface built with React 18
@@ -38,7 +41,7 @@ A powerful full-stack AI-powered quote generator with a stunning React frontend 
 ## Project Structure
 
 ```
-ai_quote_generator/
+Swan_Quote_Generator/
 ├── app/
 │   ├── __init__.py
 │   ├── config.py                # Configuration settings
@@ -56,8 +59,10 @@ ai_quote_generator/
 │       │   └── quote_routes.py
 │       └── utils/               # Helper functions
 │           ├── __init__.py
-│           ├── ai_client.py
-│           └── prompt_builder.py
+│           ├── ai_client.py     # Gemini calls, safety settings, error mapping
+│           ├── prompt_builder.py
+│           └── rate_limit.py    # Per-client and global request limits
+├── tests/                       # pytest suite (Gemini is faked)
 ├── static/                      # React frontend
 │   ├── package.json
 │   ├── tailwind.config.js
@@ -77,6 +82,8 @@ ai_quote_generator/
 ├── docker-compose.yml           # Development environment
 ├── docker-compose.prod.yml      # Production environment
 ├── requirements.txt             # Python dependencies
+├── requirements-dev.txt         # Plus pytest and Ruff
+├── .github/workflows/test.yml   # CI: lint, tests, Docker build
 └── README.md                    # This file
 ```
 
@@ -222,7 +229,8 @@ Generate a quote with custom parameters.
 }
 ```
 
-**Note**: `language` can be `"en"` (English) or `"ar"` (Arabic)
+**Note**: `language` can be `"en"` (English) or `"ar"` (Arabic). `style` can be one of
+`shakespearean`, `modern`, `philosophical`, `poetic` or `witty`, or any short description.
 
 **Response:**
 ```json
@@ -275,6 +283,22 @@ Get a list of all available quote categories.
 
 Check API health status.
 
+#### Errors
+
+Every error body is `{"detail": "<message>"}`, and the message is safe to show to users.
+
+| Status | When |
+|---|---|
+| 422 | The request is invalid, or Gemini refused the topic or style |
+| 429 | Too many quotes from one client (10 a minute) or from everyone (120 a minute); see `Retry-After` |
+| 502 | Gemini returned an error or no quote |
+| 503 | The Gemini quota is used up for now |
+| 504 | Gemini took longer than `REQUEST_TIMEOUT` seconds |
+
+The rate limits count per uvicorn worker, in memory. The client is identified by
+`CF-Connecting-IP` (Cloudflare) or `X-Forwarded-For`; a client that bypasses the proxy
+can forge those, which is what the global limit is for.
+
 ### Interactive Documentation
 
 - **Swagger UI**: http://localhost:8000/docs (available in development mode)
@@ -289,23 +313,29 @@ Check API health status.
 
 ## Configuration
 
-Edit the `.env` file to customize settings:
+Copy `.env.example` to `.env` and set `GEMINI_API_KEY`. Every setting can also be set as an
+environment variable:
 
 ```env
-# API Configuration
 GEMINI_API_KEY=your_gemini_api_key_here
-
-# Application Settings
-APP_NAME=AI Quote Generator
-APP_VERSION=1.0.0
 DEBUG=True
-HOST=0.0.0.0
-PORT=8000
 
 # AI Model Settings
-DEFAULT_MODEL=gemini-pro
-MAX_TOKENS=2048
+DEFAULT_MODEL=gemini-2.5-flash
+MAX_TOKENS=300
 TEMPERATURE=0.8
+REQUEST_TIMEOUT=30
+# 0 turns thinking off on 2.5 Flash (a quote needs no reasoning); "none" leaves it to the model
+THINKING_BUDGET=0
+
+# Rate limits per uvicorn worker
+RATE_LIMIT_ENABLED=True
+RATE_LIMIT_PER_CLIENT=10
+RATE_LIMIT_GLOBAL=120
+
+# Extra browser origins allowed to call the API, as a JSON list. The bundled frontend is
+# served from the same origin and needs none.
+# ALLOWED_ORIGINS=["https://example.com"]
 ```
 
 ## Example Usage with cURL
@@ -457,13 +487,15 @@ python3 main.py
 ### Running Tests
 
 ```bash
-# Python tests
-pytest tests/
-
-# Frontend tests
-cd static
-npm test
+pip install -r requirements-dev.txt
+pytest
 ```
+
+The tests replace Gemini with a fake, so they need no API key or network. They cover the
+request sent to Gemini (safety settings, model, token budget, temperature), refused and
+empty responses, API errors, timeouts, the rate limits, input validation and CORS. CI runs
+them on every push, with `ruff check`, `ruff format --check` and a Docker build that must
+answer `/health`.
 
 ## Docker Support
 
@@ -491,24 +523,17 @@ The Dockerfile uses multi-stage builds for optimized image size and security.
 
 ## Deployment
 
-### Vercel Deployment
+### Render (live site)
 
-This application is optimized for Vercel serverless deployment:
+[swanexus.dev](https://www.swanexus.dev) runs the Docker image on Render, behind Cloudflare.
+Render builds the `Dockerfile` and redeploys on every push to `main`. Set `GEMINI_API_KEY`
+(and any other setting above) in the Render service's environment.
 
-1. **Prerequisites**: Vercel account and CLI installed
-   ```bash
-   npm i -g vercel
-   ```
+### Vercel
 
-2. **Configure Environment Variables**
-   Add `GEMINI_API_KEY` to your Vercel project settings
-
-3. **Deploy**
-   ```bash
-   vercel --prod
-   ```
-
-The `api/index.py` file provides the Mangum adapter for serverless compatibility.
+`api/index.py` wraps the app with Mangum for Vercel's Python runtime. Set `GEMINI_API_KEY`
+in the Vercel project and deploy with `vercel --prod`. The in-memory rate limits reset with
+each serverless instance, so they are much weaker there.
 
 ### Traditional Hosting
 
@@ -591,15 +616,15 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 ### DevOps
 - **Docker**: Containerization
 - **Docker Compose**: Multi-container orchestration
-- **Render**: Serverless deployment platform
+- **Render**: Hosts the Docker image for the live site
 
 ## License
 
-This project is open source and available under the MIT License.
+This project is open source and available under the [MIT License](LICENSE).
 
 ## Credits & Links
 
-- **Built by**: [AyaNexus](https://ayanexus.dev/) 🦢
+- **Built by**: [Aya Nabil](https://ayanabil.vercel.app/) 🦢
 - **GitHub Repository**: [Swan_Quote_Generator](https://github.com/1AyaNabil1/Swan_Quote_Generator)
 - **Live Demo**: [Swan](https://swanexus.dev)
 - **Powered by**: Google Gemini AI
