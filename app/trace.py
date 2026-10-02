@@ -7,6 +7,7 @@ import json
 import logging
 from dataclasses import asdict, dataclass, field
 
+from app import observability as metrics
 from app.llm import Attempt, LLMResult
 
 
@@ -18,6 +19,7 @@ class Trace:
     category: str
     language: str
     length: str
+    request_id: str = field(default_factory=metrics.request_id_var.get)
     has_topic: bool = False
     has_style: bool = False
     outcome: str = "unknown"
@@ -43,6 +45,20 @@ class Trace:
 
 
 def observe(trace: Trace) -> None:
-    """Log the finished generation. Topic and style are not logged, only whether they
-    were given: they are user text."""
+    """Log the finished generation and count it. Topic and style are not logged, only
+    whether they were given: they are user text."""
     logger.info(json.dumps(trace.to_dict(), ensure_ascii=False))
+
+    metrics.GENERATIONS.labels(trace.outcome, trace.language).inc()
+    for attempt in trace.attempts:
+        metrics.MODEL_CALLS.labels(attempt.model, attempt.outcome).inc()
+        if attempt.outcome != "CircuitOpen":
+            metrics.MODEL_DURATION.labels(attempt.model).observe(attempt.latency)
+    metrics.TOKENS.labels("input").inc(trace.input_tokens)
+    metrics.TOKENS.labels("output").inc(trace.output_tokens)
+    for check in trace.violations:
+        metrics.VIOLATIONS.labels(check).inc()
+    if trace.generations > 1:
+        metrics.REGENERATIONS.inc(trace.generations - 1)
+    if trace.injection_rule:
+        metrics.INJECTIONS.labels(trace.injection_rule).inc()

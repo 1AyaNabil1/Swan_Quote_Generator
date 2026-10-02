@@ -58,6 +58,11 @@ class QuoteController:
             self._llm = build_llm()
         return self._llm
 
+    @property
+    def breakers(self) -> dict:
+        """Each model's circuit breaker, once the model chain exists."""
+        return self._llm.breakers if self._llm is not None else {}
+
     async def generate_quote(self, request: QuoteRequest, trace: Trace) -> QuoteResponse:
         if settings.guardrails_enabled:
             finding = scan_request(topic=request.topic, style=request.style)
@@ -75,7 +80,8 @@ class QuoteController:
         deadline = time.monotonic() + settings.request_timeout
         hint = ""
         violations: list[Violation] = []
-        for _ in range(max(1, settings.max_generation_attempts)):
+        attempts = max(1, settings.max_generation_attempts)
+        for attempt in range(1, attempts + 1):
             result = await self.llm.generate(
                 LLMRequest(
                     prompt=prompt + hint,
@@ -108,9 +114,10 @@ class QuoteController:
                     timestamp=datetime.now(UTC).isoformat().replace("+00:00", "Z"),
                 )
             violations = blocking
-            hints = " ".join(dict.fromkeys(v.hint for v in blocking))
-            hint = f" Your previous answer was rejected. {hints}"
-            logger.info(f"Regenerating after failed checks: {[v.check for v in blocking]}")
+            if attempt < attempts:
+                hints = " ".join(dict.fromkeys(v.hint for v in blocking))
+                hint = f" Your previous answer was rejected. {hints}"
+                logger.info(f"Regenerating after failed checks: {[v.check for v in blocking]}")
 
         raise OutputRejected(violations)
 

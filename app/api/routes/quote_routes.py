@@ -20,6 +20,11 @@ router = APIRouter(prefix="/api/quotes", tags=["quotes"])
 _controller = None
 
 
+def circuit_breakers() -> dict:
+    """For the metrics: empty until the first quote builds the model chain."""
+    return _controller.breakers if _controller is not None else {}
+
+
 def get_controller() -> QuoteController:
     """Get or create the QuoteController instance."""
     global _controller

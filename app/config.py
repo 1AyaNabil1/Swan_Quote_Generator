@@ -53,6 +53,9 @@ class Settings(BaseSettings):
     rate_limit_per_client: int = 10  # quotes per client per minute
     rate_limit_global: int = 120  # quotes per minute across all clients
 
+    # When set, /metrics needs "Authorization: Bearer <token>"; when empty it is open
+    metrics_token: str = ""
+
     # Extra origins allowed to call the API from a browser, as a JSON list, e.g.
     # ALLOWED_ORIGINS='["https://example.com"]'. The bundled frontend is same-origin
     # and needs none.

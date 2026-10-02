@@ -15,6 +15,7 @@ from collections.abc import Callable
 from fastapi import HTTPException, Request, Response
 
 from app.config import settings
+from app.observability import RATE_LIMITED
 
 
 class SlidingWindowLimiter:
@@ -79,9 +80,10 @@ async def enforce_rate_limit(request: Request, response: Response) -> None:
     if not settings.rate_limit_enabled:
         return
     key = client_key(request)
-    for limiter, limiter_key in ((per_client, key), (overall, "all")):
+    for scope, limiter, limiter_key in (("client", per_client, key), ("global", overall, "all")):
         wait = limiter.hit(limiter_key)
         if wait is not None:
+            RATE_LIMITED.labels(scope).inc()
             seconds = max(1, math.ceil(wait))
             raise HTTPException(
                 429,

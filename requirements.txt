@@ -4,3 +4,4 @@ mangum==0.22.0
 pydantic==2.13.5
 pydantic-settings==2.15.0
 google-genai==2.27.0
+prometheus-client==0.26.0
