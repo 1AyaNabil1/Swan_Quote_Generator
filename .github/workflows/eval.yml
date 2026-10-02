@@ -1,0 +1,38 @@
+name: eval
+
+# Runs the evaluation suite against Gemini on demand. Needs the GEMINI_API_KEY secret.
+on:
+  workflow_dispatch:
+    inputs:
+      suites:
+        description: "Suites to run (quality injection safety), or empty for all"
+        required: false
+        default: ""
+      modes:
+        description: "Modes to run"
+        required: false
+        default: "guarded raw"
+
+jobs:
+  eval:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+      - run: pip install -r requirements.txt
+      - name: Run the suite
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          SUITES: ${{ inputs.suites }}
+          MODES: ${{ inputs.modes }}
+        run: |
+          python -m evals.run ${SUITES:+--suites $SUITES} --modes $MODES
+          cat evals/reports/*.md >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: eval-report
+          path: evals/reports/

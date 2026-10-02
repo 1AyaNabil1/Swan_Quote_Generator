@@ -101,6 +101,8 @@ class QuoteController:
 
             quote, violations = self._check(result.text, result.finish_reason, request)
             trace.violations += [v.check for v in violations]
+            if attempt == 1:
+                trace.first_pass = not violations
             # With guardrails off, failed checks are only recorded, unless there is no quote
             blocking = violations if settings.guardrails_enabled or not quote else []
             if not blocking:

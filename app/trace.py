@@ -27,6 +27,7 @@ class Trace:
     injection_rule: str | None = None
     attempts: list[Attempt] = field(default_factory=list)
     violations: list[str] = field(default_factory=list)  # failed checks, across generations
+    first_pass: bool | None = None  # whether the first answer passed every check
     generations: int = 0  # answers received, including ones the checks rejected
     input_tokens: int = 0
     output_tokens: int = 0
