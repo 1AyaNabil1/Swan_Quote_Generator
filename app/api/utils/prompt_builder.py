@@ -107,7 +107,7 @@ class PromptBuilder:
             ...     style="modern",
             ...     length="medium"
             ... )
-            'Generate a concise, original quote. Create an uplifting quote to inspire action and determination. Specifically focus on perseverance. Write in a clear, contemporary language suitable for today's audience. Make it thoughtful (20-40 words, 1-2 sentences). Provide ONLY the quote itself, without attribution or quotation marks.\n\nExample: Perseverance turns dreams into reality with every bold step.'
+            'Create a motivation quote about "perseverance" in about 25 words. Use clear, contemporary language suitable for today\'s audience. Write ONLY in English. Output only the quote text.'
         """
         # Validate inputs
         if category not in [c.value for c in QuoteCategory]:
@@ -123,33 +123,30 @@ class PromptBuilder:
                 f"Building prompt with category={category}, topic={topic}, style={style}, length={length}, language={language}"
             )
 
-        # ULTRA-SIMPLE prompt to avoid Gemini blocking issues
-        # Complex prompts with examples can trigger false MAX_TOKENS
+        # Keep the prompt short. Topic and style are user text, so they are quoted and
+        # the system instruction tells Gemini to treat them as subject matter only.
         prompt = f"Create a {category} quote"
 
         if topic:
-            prompt += f" about {topic}"
+            prompt += f' about "{topic}"'
 
         # Word count only
         word_count = "15" if length == "short" else "25" if length == "medium" else "45"
-        prompt += f" in about {word_count} words"
+        prompt += f" in about {word_count} words."
+
+        if style:
+            known = style.lower()
+            if known in PromptBuilder.STYLE_GUIDANCE:
+                prompt += f" {PromptBuilder.STYLE_GUIDANCE[known]}"
+            else:
+                prompt += f' Write it in this style: "{style}".'
 
         # Add language specification with clear instructions
         if language == "ar":
-            prompt += ". Write ONLY in Arabic. Do not include English translation or explanations. Output only the Arabic quote text."
+            prompt += " Write ONLY in Arabic. Do not include English translation or explanations. Output only the Arabic quote text."
         else:
-            prompt += ". Write ONLY in English. Output only the quote text."
+            prompt += " Write ONLY in English. Output only the quote text."
 
         if settings.debug:
             logger.debug(f"Generated prompt: {prompt}")
         return prompt
-
-    @staticmethod
-    def build_system_prompt() -> str:
-        """
-        Build a minimal system prompt for fastest generation.
-
-        Returns:
-            str: Concise system prompt.
-        """
-        return "You are Swan, a quote generator. Generate one original quote only. Do not include meta-commentary, explanations, or translations. Output only the requested quote text."

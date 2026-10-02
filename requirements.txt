@@ -1,10 +1,6 @@
-fastapi==0.104.1
-uvicorn[standard]==0.24.0
-mangum==0.17.0
-pydantic==2.8.2
-pydantic-settings==2.1.0
-python-dotenv==1.0.0
-google-generativeai==0.8.5
-python-multipart==0.0.6
-tenacity==8.2.3
-ruff>=0.8.0
+fastapi==0.142.2
+uvicorn[standard]==0.54.0
+mangum==0.22.0
+pydantic==2.13.5
+pydantic-settings==2.15.0
+google-genai==2.27.0

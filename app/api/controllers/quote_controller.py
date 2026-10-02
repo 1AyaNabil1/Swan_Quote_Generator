@@ -1,7 +1,7 @@
 import logging
-from datetime import datetime
+from datetime import UTC, datetime
 
-from app.api.models import QuoteCategory, QuoteRequest, QuoteResponse
+from app.api.models import QuoteRequest, QuoteResponse
 from app.api.utils import AIClient, PromptBuilder
 
 
@@ -22,27 +22,20 @@ class QuoteController:
 
     async def generate_quote(self, request: QuoteRequest) -> QuoteResponse:
         """Generate a quote without retry logic for faster response."""
-        system_prompt = self.prompt_builder.build_system_prompt()
-        user_prompt = self.prompt_builder.build_quote_prompt(
+        # The system instruction travels separately, in the Gemini request config
+        prompt = self.prompt_builder.build_quote_prompt(
             category=request.category.value,
             topic=request.topic,
             style=request.style,
-            length=request.length or "medium",
-            language=request.language or "en",
+            length=request.length,
+            language=request.language,
         )
-        # Combine system and user prompts for Gemini
-        combined_prompt = f"{system_prompt}\n\n{user_prompt}"
-
         quote_text = await self.ai_client.generate_quote(
-            prompt=combined_prompt, max_tokens=request.max_tokens, temperature=request.temperature
+            prompt=prompt, max_tokens=request.max_tokens, temperature=request.temperature
         )
         return QuoteResponse(
             quote=quote_text,
             author="Swan",
             category=request.category.value,
-            timestamp=datetime.utcnow().isoformat() + "Z",
+            timestamp=datetime.now(UTC).isoformat().replace("+00:00", "Z"),
         )
-
-    async def get_random_quote(self) -> QuoteResponse:
-        request = QuoteRequest(category=QuoteCategory.RANDOM)
-        return await self.generate_quote(request)

@@ -2,13 +2,13 @@
 Pydantic models for quote generation requests and responses.
 """
 
-from enum import Enum
-from typing import ClassVar
+from enum import StrEnum
+from typing import Literal
 
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, ConfigDict, Field
 
 
-class QuoteCategory(str, Enum):
+class QuoteCategory(StrEnum):
     """Available quote categories."""
 
     MOTIVATION = "motivation"
@@ -26,6 +26,19 @@ class QuoteCategory(str, Enum):
 class QuoteRequest(BaseModel):
     """Request model for generating a quote."""
 
+    model_config = ConfigDict(
+        json_schema_extra={
+            "example": {
+                "category": "motivation",
+                "topic": "perseverance",
+                "style": "modern",
+                "language": "en",
+                "length": "medium",
+                "temperature": 0.8,
+            }
+        }
+    )
+
     category: QuoteCategory = Field(
         default=QuoteCategory.RANDOM, description="Category of the quote to generate"
     )
@@ -37,66 +50,32 @@ class QuoteRequest(BaseModel):
         description="Writing style (e.g., 'Shakespearean', 'modern', 'philosophical')",
         max_length=50,
     )
-    language: str | None = Field(
-        default="en",
-        description="Language for quote generation: 'en' (English) or 'ar' (Arabic)",
-        max_length=2,
+    language: Literal["en", "ar"] = Field(
+        default="en", description="Language for quote generation: 'en' (English) or 'ar' (Arabic)"
     )
-    length: str | None = Field(
+    length: Literal["short", "medium", "long"] = Field(
         default="medium",
-        description="Desired length: 'short' (10-20 words), 'medium' (20-40 words), or 'long' (40-60 words)",
+        description="Desired length: 'short' (about 15 words), 'medium' (about 25), or 'long' (about 45)",
     )
     temperature: float | None = Field(
-        default=0.8,  # Matches config for consistency
-        description="Creativity temperature (0.0-1.0)",
+        default=None,
+        description="Creativity temperature (0.0-1.0); the server default when omitted",
         ge=0.0,
         le=1.0,
     )
     max_tokens: int | None = Field(
-        default=2048,  # High default for Gemini free tier
-        description="Maximum tokens to generate (100-8192)",
+        default=None,
+        description="Maximum output tokens (100-300); the server default when omitted",
         ge=100,
         le=300,
     )
-
-    @validator("language")
-    def validate_language(cls, v):
-        valid_languages = ["en", "ar"]
-        if v not in valid_languages:
-            raise ValueError(f"Language must be one of {valid_languages}")
-        return v
-
-    @validator("length")
-    def validate_length(cls, v):
-        valid_lengths = ["short", "medium", "long"]
-        if v not in valid_lengths:
-            raise ValueError(f"Length must be one of {valid_lengths}")
-        return v
-
-    class Config:
-        json_schema_extra: ClassVar[dict] = {
-            "example": {
-                "category": "motivation",
-                "topic": "perseverance",
-                "style": "modern",
-                "language": "en",
-                "length": "medium",
-                "temperature": 0.8,
-                "max_tokens": 2048,
-            }
-        }
 
 
 class QuoteResponse(BaseModel):
     """Response model containing the generated quote."""
 
-    quote: str = Field(..., description="The generated quote")
-    author: str = Field(default="Swan", description="Author attribution")
-    category: str = Field(..., description="Category of the quote")
-    timestamp: str = Field(..., description="Generation timestamp")
-
-    class Config:
-        json_schema_extra: ClassVar[dict] = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "quote": "Keep pushing forward, for perseverance turns dreams into achievements.",
                 "author": "Swan",
@@ -104,13 +83,18 @@ class QuoteResponse(BaseModel):
                 "timestamp": "2025-10-27T18:30:00Z",
             }
         }
+    )
+
+    quote: str = Field(..., description="The generated quote")
+    author: str = Field(default="Swan", description="Author attribution")
+    category: str = Field(..., description="Category of the quote")
+    timestamp: str = Field(..., description="Generation timestamp")
 
 
 class ErrorResponse(BaseModel):
     """Error response model."""
 
-    error: str = Field(..., description="Error message")
-    detail: str | None = Field(None, description="Detailed error information")
+    detail: str = Field(..., description="Error message, safe to show to the user")
 
 
 __all__ = ["ErrorResponse", "QuoteCategory", "QuoteRequest", "QuoteResponse"]

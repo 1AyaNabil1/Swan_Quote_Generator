@@ -1,19 +1,11 @@
 import logging
 
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status
 
 from app.api.controllers import QuoteController
 from app.api.models import ErrorResponse, QuoteCategory, QuoteRequest, QuoteResponse
+from app.api.utils.rate_limit import enforce_rate_limit
 
-
-# Disable rate limiting for serverless - Redis not available
-# try:
-#     from fastapi_limiter import FastAPILimiter
-#     from fastapi_limiter.depends import RateLimiter
-#     import redis.asyncio as redis
-#     RATE_LIMITING_AVAILABLE = True
-# except ImportError:
-#     RATE_LIMITING_AVAILABLE = False
 
 logger = logging.getLogger(__name__)
 
@@ -31,16 +23,30 @@ def get_controller() -> QuoteController:
     return _controller
 
 
-# Initialize rate limiter (only if Redis is configured)
-async def init_rate_limiter():
-    """Initialize rate limiter - disabled on Vercel serverless."""
-    # Skip Redis on serverless environments
-    logger.info("Rate limiter disabled for serverless deployment")
-    return
+GENERATION_ERRORS = {
+    400: {"model": ErrorResponse, "description": "Invalid request parameters"},
+    422: {"model": ErrorResponse, "description": "Invalid request, or Gemini refused the topic"},
+    429: {"model": ErrorResponse, "description": "Rate limit exceeded"},
+    502: {"model": ErrorResponse, "description": "Gemini returned an error or no quote"},
+    503: {"model": ErrorResponse, "description": "Gemini quota exhausted"},
+    504: {"model": ErrorResponse, "description": "Gemini timed out"},
+}
 
 
-# Rate limiter disabled for serverless
-# rate_limiter = RateLimiter(times=10, seconds=60) if settings.debug else RateLimiter(times=10, seconds=60)
+async def _generate(request: QuoteRequest) -> QuoteResponse:
+    try:
+        return await get_controller().generate_quote(request)
+    except HTTPException:
+        raise  # already carries a status and a message that is safe to show
+    except ValueError as e:
+        logger.error(f"Validation error: {e!s}")
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)) from e
+    except Exception as e:
+        logger.exception("Error generating quote")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to generate quote.",
+        ) from e
 
 
 @router.post(
@@ -49,29 +55,12 @@ async def init_rate_limiter():
     status_code=status.HTTP_200_OK,
     summary="Generate a custom quote",
     description="Generate a quote based on specified category, topic, style, and length.",
-    responses={
-        200: {"description": "Quote generated successfully"},
-        400: {"model": ErrorResponse, "description": "Invalid request parameters"},
-        429: {"model": ErrorResponse, "description": "Rate limit exceeded"},
-        500: {"model": ErrorResponse, "description": "Internal server error"},
-    },
-    # Temporarily disabled rate limiting
-    # dependencies=[Depends(rate_limiter)] if settings.debug else [Depends(rate_limiter)]
+    responses={200: {"description": "Quote generated successfully"}, **GENERATION_ERRORS},
+    dependencies=[Depends(enforce_rate_limit)],
 )
 async def generate_quote(request: QuoteRequest) -> QuoteResponse:
-    try:
-        logger.info(f"Received quote generation request: {request.model_dump()}")
-        controller = get_controller()
-        return await controller.generate_quote(request)
-    except ValueError as e:
-        logger.error(f"Validation error: {e!s}")
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)) from e
-    except Exception as e:
-        logger.error(f"Error generating quote: {e!s}", exc_info=True)
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to generate quote: {e!s}",
-        ) from e
+    logger.info(f"Received quote generation request: {request.model_dump()}")
+    return await _generate(request)
 
 
 @router.get(
@@ -80,26 +69,12 @@ async def generate_quote(request: QuoteRequest) -> QuoteResponse:
     status_code=status.HTTP_200_OK,
     summary="Get a random quote",
     description="Generate a random inspirational quote.",
-    responses={
-        200: {"description": "Quote generated successfully"},
-        429: {"model": ErrorResponse, "description": "Rate limit exceeded"},
-        500: {"model": ErrorResponse, "description": "Internal server error"},
-    },
+    responses={200: {"description": "Quote generated successfully"}, **GENERATION_ERRORS},
+    dependencies=[Depends(enforce_rate_limit)],
 )
 async def get_random_quote() -> QuoteResponse:
-    try:
-        logger.info("Received random quote request")
-        controller = get_controller()
-        return await controller.get_random_quote()
-    except ValueError as e:
-        logger.error(f"Validation error: {e!s}")
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)) from e
-    except Exception as e:
-        logger.error(f"Error generating random quote: {e!s}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to generate quote: {e!s}",
-        ) from e
+    logger.info("Received random quote request")
+    return await _generate(QuoteRequest(category=QuoteCategory.RANDOM))
 
 
 @router.get(

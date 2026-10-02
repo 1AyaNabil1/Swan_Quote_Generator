@@ -1,12 +1,13 @@
 """
 Main application entry point for the AI Quote Generator.
-Optimized for Vercel serverless deployment.
+Serves the API and the built React frontend from one process.
 """
 
 import logging
 from pathlib import Path
 
-from fastapi import FastAPI, Request, status
+from fastapi import FastAPI, Request
+from fastapi.encoders import jsonable_encoder
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
@@ -35,19 +36,21 @@ app = FastAPI(
 async def validation_exception_handler(request: Request, exc: RequestValidationError):
     logger.error(f"Validation error for {request.url}: {exc.errors()}")
     return JSONResponse(
-        status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-        content={"detail": exc.errors(), "body": exc.body},
+        status_code=422,
+        content=jsonable_encoder({"detail": exc.errors(), "body": exc.body}),
     )
 
 
-# Configure CORS - Allow all origins for Vercel
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+# The bundled frontend is same-origin, so CORS is only needed for extra origins that
+# are configured explicitly. No credentials: the API uses no cookies or auth.
+if settings.allowed_origins:
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=settings.allowed_origins,
+        allow_credentials=False,
+        allow_methods=["GET", "POST"],
+        allow_headers=["Content-Type"],
+    )
 
 # Include API routers
 app.include_router(quote_router)
