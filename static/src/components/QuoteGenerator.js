@@ -43,7 +43,12 @@ const QuoteGenerator = () => {
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.detail || `HTTP ${response.status}`);
+        // The server's messages are written to be shown; validation errors are lists
+        const error = new Error(
+          typeof errorData.detail === 'string' ? errorData.detail : 'Failed to generate quote.'
+        );
+        error.fromServer = true;
+        throw error;
       }
 
       const data = await response.json();
@@ -52,7 +57,7 @@ const QuoteGenerator = () => {
       setQuoteCount(prev => prev + 1);
     } catch (error) {
       console.error('Error generating quote:', error);
-      setQuote('Failed to generate quote.');
+      setQuote(error.fromServer ? error.message : 'Failed to generate quote.');
       setAuthor('Swan');
     } finally {
       setLoading(false);
