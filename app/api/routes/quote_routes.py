@@ -1,5 +1,6 @@
 import logging
 import time
+from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, status
 
@@ -8,7 +9,7 @@ from app.api.errors import classify
 from app.api.models import ErrorResponse, QuoteCategory, QuoteRequest, QuoteResponse
 from app.api.utils.rate_limit import enforce_rate_limit
 from app.guardrails import GuardrailError
-from app.llm import LLMError
+from app.llm import CircuitBreaker, LLMError
 from app.trace import Trace, observe
 
 
@@ -20,7 +21,7 @@ router = APIRouter(prefix="/api/quotes", tags=["quotes"])
 _controller = None
 
 
-def circuit_breakers() -> dict:
+def circuit_breakers() -> dict[str, CircuitBreaker]:
     """For the metrics: empty until the first quote builds the model chain."""
     return _controller.breakers if _controller is not None else {}
 
@@ -33,7 +34,7 @@ def get_controller() -> QuoteController:
     return _controller
 
 
-GENERATION_ERRORS = {
+GENERATION_ERRORS: dict[int | str, dict[str, Any]] = {
     400: {"model": ErrorResponse, "description": "Invalid request parameters"},
     422: {
         "model": ErrorResponse,

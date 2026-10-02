@@ -19,6 +19,7 @@ dev = [
     "pytest-asyncio==1.4.0",
     "httpx==0.28.1",
     "ruff==0.16.10",
+    "mypy==2.4.0",
 ]
 
 [tool.ruff]
@@ -92,3 +93,10 @@ indent-style = "space"
 
 # Use Unix line endings
 line-ending = "auto"
+
+[tool.mypy]
+python_version = "3.11"
+packages = ["app", "evals"]
+strict = true
+warn_unreachable = true
+plugins = ["pydantic.mypy"]

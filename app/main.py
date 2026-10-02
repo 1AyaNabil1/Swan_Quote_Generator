@@ -42,7 +42,9 @@ app = FastAPI(
 
 # Custom exception handler for validation errors
 @app.exception_handler(RequestValidationError)
-async def validation_exception_handler(request: Request, exc: RequestValidationError):
+async def validation_exception_handler(
+    request: Request, exc: RequestValidationError
+) -> JSONResponse:
     logger.error(f"Validation error for {request.url}: {exc.errors()}")
     return JSONResponse(
         status_code=422,
@@ -71,7 +73,7 @@ REGISTRY.register(observability.CircuitCollector(circuit_breakers))
 
 
 @app.get("/health", tags=["health"])
-async def health_check():
+async def health_check() -> dict[str, object]:
     """Health check endpoint for monitoring."""
     return {
         "status": "healthy",
@@ -83,7 +85,7 @@ async def health_check():
 
 
 @app.get("/metrics", include_in_schema=False)
-async def metrics(request: Request):
+async def metrics(request: Request) -> Response:
     """Prometheus metrics. Protected by METRICS_TOKEN when that is set."""
     if settings.metrics_token:
         expected = f"Bearer {settings.metrics_token}"
@@ -101,7 +103,7 @@ if build_dir.exists():
 else:
 
     @app.get("/")
-    async def no_build():
+    async def no_build() -> dict[str, str]:
         return {"error": "React build missing. Run: cd static && npm run build"}
 
 

@@ -2,8 +2,21 @@
 Turns eval results into a Markdown report.
 """
 
+from __future__ import annotations
+
 import statistics
 from collections import defaultdict
+from typing import TYPE_CHECKING, Any
+
+
+if TYPE_CHECKING:
+    from collections.abc import Mapping, Sequence
+
+    from evals.run import Case, Result
+
+    Cases = Sequence[Case]
+    Results = Mapping[str, Result]  # by case id
+    Group = list[tuple[Case, Result]]
 
 
 VARIETY_NAMES = {
@@ -26,15 +39,15 @@ def table(header: list[str], rows: list[list[str]]) -> str:
     return "\n".join(lines)
 
 
-def by_variety(cases, results):
-    groups = defaultdict(list)
+def by_variety(cases: Cases, results: Results) -> list[tuple[str, Group]]:
+    groups: dict[str, Group] = defaultdict(list)
     for case in cases:
         if case.id in results:
             groups[case.variety].append((case, results[case.id]))
     return [(VARIETY_NAMES.get(v, v), groups[v]) for v in VARIETY_NAMES if v in groups]
 
 
-def quality_section(cases, results) -> str:
+def quality_section(cases: Cases, results: Results) -> str:
     pairs = [(c, results[c.id]) for c in cases if c.id in results]
     ok = [r for _, r in pairs if r.outcome == "ok"]
     checks = sorted({v for _, r in pairs for v in r.violations})
@@ -73,9 +86,9 @@ def quality_section(cases, results) -> str:
     return "\n\n".join(out)
 
 
-def injection_section(cases, results) -> str:
+def injection_section(cases: Cases, results: Results) -> str:
     rows = []
-    all_pairs = []
+    all_pairs: Group = []
     for name, group in by_variety(cases, results):
         all_pairs += group
         rows.append(attack_row(name, group))
@@ -86,7 +99,7 @@ def injection_section(cases, results) -> str:
     )
 
 
-def attack_row(name, group) -> list[str]:
+def attack_row(name: str, group: Group) -> list[str]:
     n = len(group)
     canaries = [(c, r) for c, r in group if c.canary]
     return [
@@ -98,7 +111,7 @@ def attack_row(name, group) -> list[str]:
     ]
 
 
-def safety_section(cases, results) -> str:
+def safety_section(cases: Cases, results: Results) -> str:
     harmful = [c for c in cases if c.expect == "refusal"]
     controls = [c for c in cases if c.expect == "quote"]
     rows = []
@@ -126,8 +139,8 @@ def safety_section(cases, results) -> str:
     )
 
 
-def pair_agreement(cases, results) -> str:
-    pairs = defaultdict(list)
+def pair_agreement(cases: Cases, results: Results) -> str:
+    pairs: dict[str, list[bool]] = defaultdict(list)
     for case in cases:
         if case.pair and case.id in results:
             pairs[case.pair].append(results[case.id].outcome == "ok")
@@ -135,7 +148,7 @@ def pair_agreement(cases, results) -> str:
     return pct(sum(len(set(p)) == 1 for p in complete), len(complete))
 
 
-def appendix(cases, results_by_mode, modes) -> str:
+def appendix(cases: Cases, results_by_mode: Mapping[str, Results], modes: Sequence[str]) -> str:
     rows = []
     for case in cases:
         cells = [f"`{case.id}`"]
@@ -151,7 +164,7 @@ def appendix(cases, results_by_mode, modes) -> str:
     return table(["Case", *modes], rows)
 
 
-def render(meta: dict, cases, results) -> str:
+def render(meta: dict[str, Any], cases: Cases, results: Sequence[Result]) -> str:
     modes = meta["modes"]
     by_mode = {mode: {r.case: r for r in results if r.mode == mode} for mode in modes}
     suites = {

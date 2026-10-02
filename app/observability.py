@@ -10,12 +10,14 @@ import logging
 import re
 import time
 import uuid
-from collections.abc import Callable
+from collections.abc import Awaitable, Callable, Iterator, Mapping
 
 from fastapi import Request, Response
 from prometheus_client import Counter, Gauge, Histogram, disable_created_metrics
 from prometheus_client.core import GaugeMetricFamily
 from starlette.routing import Mount
+
+from app.llm.resilience import CircuitBreaker
 
 
 request_id_var: contextvars.ContextVar[str] = contextvars.ContextVar("request_id", default="-")
@@ -31,7 +33,7 @@ class RequestIdFilter(logging.Filter):
         return True
 
 
-disable_created_metrics()  # the *_created samples add nothing for a single process
+disable_created_metrics()  # type: ignore[no-untyped-call]  # the *_created samples add nothing for a single process
 
 HTTP_REQUESTS = Counter("swan_http_requests_total", "HTTP requests", ["method", "route", "status"])
 HTTP_DURATION = Histogram(
@@ -69,10 +71,10 @@ BUILD_INFO = Gauge(
 class CircuitCollector:
     """Reports each model's circuit breaker at scrape time: 1 while open, else 0."""
 
-    def __init__(self, breakers: Callable[[], dict]):
+    def __init__(self, breakers: Callable[[], Mapping[str, CircuitBreaker]]):
         self._breakers = breakers
 
-    def collect(self):
+    def collect(self) -> Iterator[GaugeMetricFamily]:
         gauge = GaugeMetricFamily(
             "swan_circuit_open", "1 while a model is skipped after failing", labels=["model"]
         )
@@ -91,7 +93,9 @@ def route_label(request: Request) -> str:
     return getattr(route, "path", "unmatched")
 
 
-async def observe_http(request: Request, call_next) -> Response:
+async def observe_http(
+    request: Request, call_next: Callable[[Request], Awaitable[Response]]
+) -> Response:
     """Middleware: assign a request ID, time the request, count it."""
     incoming = request.headers.get("x-request-id", "")
     request_id = incoming if SAFE_REQUEST_ID.match(incoming) else uuid.uuid4().hex

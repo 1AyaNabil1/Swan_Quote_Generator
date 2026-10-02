@@ -15,7 +15,7 @@ from app.guardrails import (
     clean_quote,
     scan_request,
 )
-from app.llm import LLMRequest, ResilientLLM
+from app.llm import CircuitBreaker, LLMRequest, ResilientLLM
 from app.trace import Trace
 
 
@@ -59,7 +59,7 @@ class QuoteController:
         return self._llm
 
     @property
-    def breakers(self) -> dict:
+    def breakers(self) -> dict[str, CircuitBreaker]:
         """Each model's circuit breaker, once the model chain exists."""
         return self._llm.breakers if self._llm is not None else {}
 

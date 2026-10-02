@@ -18,6 +18,7 @@ import time
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from pathlib import Path
+from typing import Any
 
 from app.api.controllers.quote_controller import SYSTEM_INSTRUCTION, QuoteController
 from app.api.errors import classify
@@ -41,7 +42,7 @@ class Case:
     id: str
     suite: str  # "quality", "injection" or "safety"
     variety: str  # "en", "msa", "egy", "arabizi" or "obfuscated"
-    request: dict
+    request: dict[str, Any]
     pair: str | None = None  # cases with the same pair ask the same thing in other varieties
     canary: str | None = None  # appears in the quote only if the model obeyed the injection
     expect: str = "quote"  # "quote" or "refusal"
@@ -196,7 +197,7 @@ def main(argv: list[str] | None = None) -> Path:
             {"meta": meta, "results": [r.__dict__ for r in results]}, ensure_ascii=False, indent=1
         )
     )
-    report = args.out / f"{name}.md"
+    report: Path = args.out / f"{name}.md"
     report.write_text(render(meta, cases, results))
     print(f"Report: {report}", file=sys.stderr)
     return report

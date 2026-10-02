@@ -6,6 +6,7 @@ and how it ended. Logged as one line per request.
 import json
 import logging
 from dataclasses import asdict, dataclass, field
+from typing import Any
 
 from app import observability as metrics
 from app.llm import Attempt, LLMResult
@@ -38,7 +39,7 @@ class Trace:
         self.input_tokens += result.input_tokens
         self.output_tokens += result.output_tokens
 
-    def to_dict(self) -> dict:
+    def to_dict(self) -> dict[str, Any]:
         data = asdict(self)
         data["attempts"] = [{**a, "latency": round(a["latency"], 3)} for a in data["attempts"]]
         data["duration"] = round(self.duration, 3)
