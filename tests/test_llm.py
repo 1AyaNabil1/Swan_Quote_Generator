@@ -184,3 +184,32 @@ def test_model_spec_parse(text, spec):
 def test_model_spec_parse_rejects_nonsense(text):
     with pytest.raises(ValueError):
         ModelSpec.parse(text)
+
+
+@pytest.mark.parametrize(
+    ("default_model", "budget", "spec"),
+    [
+        ("gemini-2.5-flash", 0, ModelSpec("gemini-2.5-flash", thinking_budget=0)),
+        ("gemini-2.5-flash", None, ModelSpec("gemini-2.5-flash")),
+        ("gemini-2.5-flash@512", 0, ModelSpec("gemini-2.5-flash", thinking_budget=512)),
+        # THINKING_BUDGET is not applied to 3.x models, which reject or ignore it
+        ("gemini-3.5-flash-lite", 0, ModelSpec("gemini-3.5-flash-lite")),
+        (
+            "gemini-3.5-flash-lite@minimal",
+            0,
+            ModelSpec("gemini-3.5-flash-lite", thinking_level="MINIMAL"),
+        ),
+    ],
+)
+def test_primary_spec(monkeypatch, default_model, budget, spec):
+    from app.config import settings
+    from app.llm.factory import primary_spec
+
+    monkeypatch.setattr(settings, "default_model", default_model)
+    monkeypatch.setattr(settings, "thinking_budget", budget)
+    assert primary_spec() == spec
+
+
+def test_model_spec_round_trips_as_text():
+    for text in ("gemini-2.5-flash", "gemini-2.5-flash@0", "gemini-3.5-flash-lite@minimal"):
+        assert str(ModelSpec.parse(text)) == text
