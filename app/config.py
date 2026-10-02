@@ -25,7 +25,9 @@ class Settings(BaseSettings):
     gemini_api_key: str = ""  # Required: set GEMINI_API_KEY in the environment
 
     # AI Model Settings
-    default_model: str = "gemini-2.5-flash"
+    # A model spec: "name", "name@<thinking budget>" (2.5) or "name@<thinking level>" (3.x).
+    # gemini-2.5-flash is no longer offered to new API projects.
+    default_model: str = "gemini-3.5-flash-lite@minimal"
     max_tokens: int = 300  # Room for a 45-word quote in Arabic
     temperature: float = 0.8  # Balanced creativity
     request_timeout: float = 30  # total seconds per request, across retries and fallbacks
@@ -37,10 +39,10 @@ class Settings(BaseSettings):
     # JSON list of specs: "name", "name@<thinking budget>" or "name@<thinking level>",
     # e.g. FALLBACK_MODELS='["gemini-3.5-flash-lite@minimal"]'. A refusal is never
     # retried on another model.
-    fallback_models: list[str] = []
+    fallback_models: list[str] = ["gemini-2.5-flash-lite@0"]
     llm_retries: int = 1  # extra tries on the same model after an outage or dropped connection
     llm_backoff: float = 0.25  # seconds before the first retry; doubles each time
-    llm_attempt_timeout: float = 15  # cap per model call, so a hanging model leaves time
+    llm_attempt_timeout: float = 10  # cap per model call, so a stalled call can be retried
     circuit_breaker_threshold: int = 5  # failures in a row before a model is skipped
     circuit_breaker_cooldown: float = 30  # seconds a skipped model stays skipped
 

@@ -103,9 +103,16 @@ async def test_deadline_is_shared_and_each_call_is_capped():
     clock = Clock()
     a = FakeProvider("a", TimedOut("slow"), clock=clock, takes=4)
     b = FakeProvider("b", clock=clock, takes=1)
-    await run(chain(a, b, clock=clock, attempt_timeout=4), deadline=clock.now + 10)
+    await run(chain(a, b, clock=clock, attempt_timeout=4, retries=0), deadline=clock.now + 10)
     assert a.timeouts == [4]  # capped, so b still had time
     assert b.timeouts == [4]
+
+
+async def test_a_stalled_call_is_retried_once():
+    a = FakeProvider("a", TimedOut("stalled"), "second try")
+    result, attempts = await run(chain(a, retries=1))
+    assert result.text == "second try"
+    assert [x.outcome for x in attempts] == ["TimedOut", "ok"]
 
 
 async def test_passed_deadline_stops_before_the_next_model():

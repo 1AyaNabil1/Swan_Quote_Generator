@@ -8,12 +8,14 @@ regenerated, so it says what to do differently; it never repeats the model's out
 import re
 from dataclasses import dataclass
 
-from app.guardrails.normalize import normalize, script_share
+from app.guardrails.normalize import normalize, other_script_letters, script_share
 
 
 @dataclass(frozen=True)
 class Violation:
-    check: str  # "empty", "truncated", "recitation", "language", "length", "format", "leak"
+    check: (
+        str  # "refusal", "empty", "truncated", "recitation", "language", "length", "format", "leak"
+    )
     hint: str
 
 
@@ -35,6 +37,21 @@ META = re.compile(
     r"(?:بالطبع|بالتاكيد)\W|اليك\W+(?:ال)?اقتباس|هذا\W+(?:هو\W+)?(?:ال)?اقتباس|اقتباس\s*:)"
     r"|\btranslation\s*:|\b(?:english|arabic) translation\b|الترجمه\s*:"
 )
+# The model declining in its own words, inside an otherwise valid answer. Narrow, so a
+# quote like "I cannot change the wind..." or «لا أستطيع أن أنسى أمي» is still a quote.
+# Run on normalize()d text: Arabic without hamza on alef, with ه for ة and ي for ى.
+REFUSAL = re.compile(
+    r"\bi (?:cannot|can['’]?t|can not|won['’]?t|will not|am unable to|am not able to) "
+    r"(?:fulfill|comply with|help with|assist with|generate|create|write|provide|produce)"
+    r"(?: (?:this|that|your|such|any|the))? (?:request|content|quote|material|kind of)\b"
+    r"|\bi (?:cannot|can['’]?t|won['’]?t|will not) (?:fulfill|comply)\b"
+    r"|\bi do not (?:generate|create|produce|write) (?:content|material|quotes?) that\b"
+    r"|^(?:i['’]?m sorry|i apologi[sz]e|sorry),? (?:but )?i (?:can['’]?t|cannot|won['’]?t|am unable)"
+    r"|لا (?:استطيع|يمكنني|اقدر|يمكن) (?:تلبيه|تنفيذ|المساعده|انشاء|كتابه|تقديم) "
+    r"(?:هذا|هذه|ذلك|مثل|اي|محتوي|الطلب|طلبك)"
+    r"|^(?:عذرا|اعتذر|اسف|اسفه|معلش)\W+(?:\w+\W+){0,2}?(?:لا|لن|مش|ما)\b"
+    r"|(?:هذا|هذه) الطلب|مش هقدر (?:اكتب|اساعد)"
+)
 MARKDOWN = re.compile(r"\*\*|__|^#+\s|^\s*(?:[-*•]|\d+[.)])\s", re.MULTILINE)
 
 
@@ -53,6 +70,8 @@ def check_quote(
     """Every check the quote fails; empty if it is fine to show."""
     if finish_reason == "recitation":
         return [Violation("recitation", "Write an original quote, not an existing one.")]
+    if REFUSAL.search(normalize(quote)):
+        return [Violation("refusal", "")]  # not regenerated: see quote_controller
     if not quote.strip():
         if finish_reason == "max_tokens":
             return [Violation("truncated", "Keep the quote short enough to finish.")]
@@ -63,7 +82,15 @@ def check_quote(
         violations.append(Violation("truncated", "Keep the quote short enough to finish."))
 
     arabic, latin = script_share(quote)
-    if language == "ar" and arabic < MIN_SCRIPT_SHARE:
+    if other_script_letters(quote):
+        violations.append(
+            Violation(
+                "language",
+                f"Write the quote entirely in {'Arabic' if language == 'ar' else 'English'}, "
+                "with no letters from any other script.",
+            )
+        )
+    elif language == "ar" and arabic < MIN_SCRIPT_SHARE:
         violations.append(
             Violation("language", "Write the quote entirely in Arabic, with no other language.")
         )

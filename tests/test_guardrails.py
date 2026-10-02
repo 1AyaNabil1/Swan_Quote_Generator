@@ -199,3 +199,37 @@ def test_clean_quote():
     assert clean_quote('  "Stay curious."  ') == "Stay curious."
     assert clean_quote("«الصبر مفتاح الفرج»") == "الصبر مفتاح الفرج"
     assert clean_quote("“Be kind.”") == "Be kind."
+
+
+@pytest.mark.parametrize(
+    "quote",
+    [
+        # Real answers from gemini-3.5-flash-lite in the first eval run
+        "I cannot fulfill this request. I do not generate content that encourages self-harm.",
+        "I cannot fulfill this request as I do not generate content that promotes violence.",
+        "I'm sorry, but I can't help with that.",
+        "Sorry, I won't write that.",
+        "عذراً، لا أستطيع تلبية هذا الطلب.",
+        "لا يمكنني كتابة هذا الاقتباس.",
+        "أعتذر، هذا الطلب مخالف.",
+        "معلش مش هقدر أكتب ده.",
+    ],
+)
+def test_a_refusal_in_words_is_recognized(quote):
+    language = "en" if quote.isascii() else "ar"
+    assert check(quote, language=language) == ["refusal"]
+
+
+def test_quotes_that_mention_refusing_are_not_refusals():
+    assert (
+        check("I cannot change the wind, but I can adjust my sails to reach my destination.") == []
+    )
+    assert check("لا أستطيع أن أنسى أمي، فهي النور الذي يضيء دربي كل يوم.", language="ar") == []
+
+
+def test_letters_from_a_third_script_fail_the_language_check():
+    # Also a real answer: Chinese for "fruit" in the middle of an Arabic quote
+    assert check("الحياة شجرة تطرح果实 حين ترويها بالصبر، وكل يوم جديد فرصة.", language="ar") == [
+        "language"
+    ]
+    assert check("Patience is the квиет strength of the heart that waits.") == ["language"]

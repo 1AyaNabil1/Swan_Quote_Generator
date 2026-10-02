@@ -15,7 +15,7 @@ from app.guardrails import (
     clean_quote,
     scan_request,
 )
-from app.llm import CircuitBreaker, LLMRequest, ResilientLLM
+from app.llm import CircuitBreaker, LLMRequest, Refused, ResilientLLM
 from app.trace import Trace
 
 
@@ -101,6 +101,10 @@ class QuoteController:
 
             quote, violations = self._check(result.text, result.finish_reason, request)
             trace.violations += [v.check for v in violations]
+            if any(v.check == "refusal" for v in violations):
+                # The model said no in words. Like a safety block, that is final:
+                # regenerating would be asking until it says yes.
+                raise Refused(f"{result.model}: declined in its answer")
             if attempt == 1:
                 trace.first_pass = not violations
             # With guardrails off, failed checks are only recorded, unless there is no quote

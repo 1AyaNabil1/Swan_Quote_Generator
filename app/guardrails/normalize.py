@@ -41,6 +41,16 @@ def squash(text: str) -> str:
     return re.sub(r"[\W_]+", "", normalize(text))
 
 
+def other_script_letters(text: str) -> int:
+    """Letters that are neither Arabic nor Latin, e.g. CJK or Cyrillic."""
+    text = unicodedata.normalize("NFKC", text).replace("\u0640", "")
+    return sum(
+        1
+        for ch in text
+        if ch.isalpha() and not ARABIC_LETTER.match(ch) and not LATIN_LETTER.match(ch)
+    )
+
+
 def script_share(text: str) -> tuple[float, float]:
     """The shares of letters that are Arabic and Latin, as (arabic, latin)."""
     text = unicodedata.normalize("NFKC", text)

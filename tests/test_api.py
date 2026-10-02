@@ -394,3 +394,19 @@ def test_a_rejected_request_is_logged_with_its_rule(client, gemini, caplog):
     record = json.loads([r for r in caplog.records if r.name == "swan.generation"][-1].message)
     assert record["outcome"] == "injection"
     assert record["injection_rule"] == "exfiltrate_en"
+
+
+def test_a_refusal_written_as_the_quote_is_a_422_and_not_regenerated(client, gemini):
+    gemini.result = quote_response(
+        quote_json("I cannot fulfill this request. I do not generate that.")
+    )
+    response = generate(client, topic="something harmful")
+    assert response.status_code == 422
+    assert response.json()["detail"] == api_errors.BLOCKED_MESSAGE
+    assert len(gemini.calls) == 1
+
+
+def test_a_refusal_is_recognized_even_with_guardrails_off(client, gemini, monkeypatch):
+    monkeypatch.setattr(settings, "guardrails_enabled", False)
+    gemini.result = quote_response(quote_json("عذراً، لا أستطيع تلبية هذا الطلب."))
+    assert generate(client, language="ar").status_code == 422

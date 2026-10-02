@@ -54,6 +54,10 @@ class Unavailable(LLMError):
 
 
 class TimedOut(LLMError):
+    """No answer within the call's time cap. Calls occasionally stall, so one more try is
+    worth it while the request's deadline allows."""
+
+    retryable = True
     fallback = True
 
 

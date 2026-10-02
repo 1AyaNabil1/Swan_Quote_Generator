@@ -2,6 +2,8 @@
 Request IDs, metrics and the /metrics endpoint.
 """
 
+import re
+
 from conftest import quote_response
 from google.genai import errors
 from prometheus_client import REGISTRY
@@ -99,10 +101,9 @@ def test_metrics_endpoint_is_prometheus_text(client):
     assert response.status_code == 200
     assert response.headers["content-type"].startswith("text/plain")
     assert "swan_generations_total" in response.text
-    assert (
-        f'swan_build_info{{model="{settings.default_model}",version="{settings.app_version}"}} 1.0'
-        in response.text
-    )
+    # Labelled with the model the process started with, before the tests pinned one
+    build_info = rf'swan_build_info{{model="[^"]+",version="{settings.app_version}"}} 1.0'
+    assert re.search(build_info, response.text)
 
 
 def test_metrics_token(client, monkeypatch):
