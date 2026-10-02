@@ -62,6 +62,7 @@ ignore = [
     "E501",   # Line too long (handled by formatter)
     "B008",   # Do not perform function calls in argument defaults (needed for FastAPI)
     "N805",   # First argument of a method should be named `self` (pydantic validators)
+    "N818",   # Exception names describe outcomes: Refused, RateLimited, InputRejected
 ]
 
 # Allow autofix for all enabled rules
@@ -71,6 +72,10 @@ unfixable = []
 [tool.ruff.lint.per-file-ignores]
 # Ignore import rules in __init__.py files
 "__init__.py" = ["F401", "F403"]
+# Arabic letters are not look-alikes of Latin ones here; they are the point
+"app/guardrails/*" = ["RUF001", "RUF003"]
+"tests/*" = ["RUF001", "RUF003"]
+"evals/*" = ["RUF001", "RUF003"]
 
 [tool.ruff.lint.isort]
 # Configure import sorting
