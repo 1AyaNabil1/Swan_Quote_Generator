@@ -12,7 +12,7 @@ import time
 from collections import deque
 from collections.abc import Callable
 
-from fastapi import HTTPException, Request
+from fastapi import HTTPException, Request, Response
 
 from app.config import settings
 
@@ -43,6 +43,10 @@ class SlidingWindowLimiter:
             self._sweep(now)
         return None
 
+    def remaining(self, key: str) -> int:
+        """Hits `key` has left in the current window, as of its last hit."""
+        return max(0, self.limit - len(self._hits.get(key, ())))
+
     def _sweep(self, now: float) -> None:
         """Forget keys with no hits inside the window, so memory stays bounded."""
         for key in [k for k, h in self._hits.items() if not h or now - h[-1] >= self.window]:
@@ -69,12 +73,14 @@ def client_key(request: Request) -> str:
     return ip or "unknown"
 
 
-async def enforce_rate_limit(request: Request) -> None:
-    """FastAPI dependency: raise 429 when the client or the whole app is over its limit."""
+async def enforce_rate_limit(request: Request, response: Response) -> None:
+    """FastAPI dependency: raise 429 when the client or the whole app is over its limit.
+    Allowed responses say how many quotes the client has left, so the UI can warn."""
     if not settings.rate_limit_enabled:
         return
-    for limiter, key in ((per_client, client_key(request)), (overall, "all")):
-        wait = limiter.hit(key)
+    key = client_key(request)
+    for limiter, limiter_key in ((per_client, key), (overall, "all")):
+        wait = limiter.hit(limiter_key)
         if wait is not None:
             seconds = max(1, math.ceil(wait))
             raise HTTPException(
@@ -82,3 +88,5 @@ async def enforce_rate_limit(request: Request) -> None:
                 f"Too many quotes at once. Try again in {seconds} seconds.",
                 headers={"Retry-After": str(seconds)},
             )
+    response.headers["X-RateLimit-Limit"] = str(per_client.limit)
+    response.headers["X-RateLimit-Remaining"] = str(per_client.remaining(key))

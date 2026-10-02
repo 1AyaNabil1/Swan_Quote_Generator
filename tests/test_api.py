@@ -196,6 +196,16 @@ def test_rate_limit_per_client(client, monkeypatch):
     assert generate(client, {"cf-connecting-ip": "198.51.100.2"}).status_code == 200
 
 
+def test_responses_say_how_many_quotes_are_left(client, monkeypatch):
+    monkeypatch.setattr(rate_limit.per_client, "limit", 3)
+    first = generate(client)
+    assert first.headers["x-ratelimit-limit"] == "3"
+    assert first.headers["x-ratelimit-remaining"] == "2"
+    assert generate(client).headers["x-ratelimit-remaining"] == "1"
+    assert generate(client).headers["x-ratelimit-remaining"] == "0"
+    assert "x-ratelimit-remaining" not in generate(client).headers  # the 429
+
+
 def test_rate_limit_reads_x_forwarded_for(client, monkeypatch):
     monkeypatch.setattr(rate_limit.per_client, "limit", 1)
     first = {"x-forwarded-for": "203.0.113.9, 10.0.0.1"}
@@ -224,7 +234,9 @@ def test_categories_are_not_rate_limited(client, monkeypatch):
 def test_rate_limit_can_be_turned_off(client, monkeypatch):
     monkeypatch.setattr(settings, "rate_limit_enabled", False)
     monkeypatch.setattr(rate_limit.per_client, "limit", 1)
-    assert [generate(client).status_code for _ in range(3)] == [200, 200, 200]
+    responses = [generate(client) for _ in range(3)]
+    assert [r.status_code for r in responses] == [200, 200, 200]
+    assert "x-ratelimit-remaining" not in responses[0].headers
 
 
 # --- CORS ---

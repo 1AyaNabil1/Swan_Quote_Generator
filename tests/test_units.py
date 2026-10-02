@@ -40,6 +40,17 @@ def test_limiter_keys_are_independent():
     assert limiter.hit("a") is not None
 
 
+def test_limiter_counts_what_is_left():
+    clock = Clock()
+    limiter = SlidingWindowLimiter(2, window=60, clock=clock)
+    assert limiter.remaining("a") == 2
+    limiter.hit("a")
+    assert limiter.remaining("a") == 1
+    limiter.hit("a")
+    limiter.hit("a")  # refused, so not counted
+    assert limiter.remaining("a") == 0
+
+
 def test_limiter_forgets_idle_clients():
     clock = Clock()
     limiter = SlidingWindowLimiter(5, window=60, clock=clock)
