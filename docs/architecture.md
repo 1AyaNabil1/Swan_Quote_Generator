@@ -44,6 +44,8 @@ write. What it defends against, and how:
 | Prompt injection in the topic or style ("ignore previous instructions…") | Bilingual pattern check on normalized text; user text quoted in the prompt; a system instruction that says topic and style are subject matter, never instructions; output checks as a second line |
 | Obfuscated injection (zero-width characters, diacritics, Arabic presentation forms, full-width letters, "i g n o r e") | All folded away before matching (`app/guardrails/normalize.py`), plus a pass over text with spaces and punctuation removed |
 | The model reveals its instructions | Output check for any six-word run copied from the system instruction |
+| The model refuses in words and the refusal is shown as a quote | Output check for written refusals in English and Arabic; treated as a refusal (422) |
+| Text in the wrong language, or a stray script (an Arabic quote with Chinese in it) | Output check on the share of letters in the requested script, and on any third script |
 | Harmful content | Gemini safety filters at "medium and above" in all four categories; a refusal is final |
 | Getting around a refusal by retrying | A refusal is never retried on another model or regenerated |
 | Error messages leaking keys, IPs or stack traces | Every failure maps to a fixed message (`app/api/errors.py`); details go to the server log only |
@@ -66,7 +68,9 @@ are good topics for a quote, and the tests pin that down.
 
 **A refusal ends the request.** The fallback chain exists for outages and quotas. Sending a
 refused prompt to a second model, or regenerating it, would turn the chain into a way to shop
-for a model that says yes.
+for a model that says yes. That holds for refusals the model writes in words ("I cannot
+fulfill this request…", «عذراً، لا أستطيع…») as much as for safety-filter blocks: the first
+eval run caught Swan returning such a sentence as a quote.
 
 **Regenerate once, with the reason.** Most failed checks (an English sentence in an Arabic
 quote, a "Here is your quote:" prefix) are fixed by telling the model what was wrong. A second
@@ -78,17 +82,25 @@ function that stripped "As an AI," and "**English Translation:**" prefixes after
 malformed answer is now a detectable failure instead of something cleaned up by guesswork.
 
 **One deadline for the whole request, and a cap per call.** Retries and fallbacks share
-`REQUEST_TIMEOUT`, so they can never make a request slower than that. `LLM_ATTEMPT_TIMEOUT`
-caps each call, so a model that hangs leaves time for the fallback.
+`REQUEST_TIMEOUT` (30s), so they can never make a request slower than that.
+`LLM_ATTEMPT_TIMEOUT` (10s) caps each call. Calls occasionally stall (the first eval run saw
+two hang past 15s), so a timed-out call is retried once and the fallback still has time.
 
 **Circuit breakers per model.** After five failures in a row a model is skipped for thirty
 seconds, so requests go straight to the fallback instead of waiting for a model that is down.
 The state is exported as a metric.
 
-**Thinking off.** A quote needs no reasoning. On 2.5 Flash a thinking budget of 0 turns it
-off, which keeps responses fast and the whole token budget for the quote. 3.x models take a
-thinking level instead, so model specs carry either (`gemini-2.5-flash@0`,
-`gemini-3.5-flash-lite@minimal`).
+**Thinking turned down, per model.** A quote needs no reasoning. Tested against the live API:
+`gemini-3.6-flash` left to think spent all 300 output tokens thinking and was cut off, and
+`gemini-3.8-flash` answered "Here is the JSON requested:" instead of JSON. 2.5 models take a
+thinking budget (0 turns it off) while `gemini-3.5-flash-lite` rejects a budget and takes a
+level, so every model is a spec that carries its own setting: `gemini-2.5-flash-lite@0`,
+`gemini-3.5-flash-lite@minimal`.
+
+**The default model is chosen by the evals.** `gemini-2.5-flash`, the original model, is no
+longer offered to new API projects, so a fresh clone would only ever get errors.
+`gemini-3.5-flash-lite@minimal` replaced it after passing every quality case on the first
+answer with a median latency under a second; `gemini-2.5-flash-lite@0` is the fallback.
 
 **One worker, state in memory.** The service waits on Gemini, not the CPU, so one async
 worker is enough. One process also keeps the rate limits, circuit breakers and metrics

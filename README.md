@@ -30,7 +30,11 @@ where strangers type the input:
   token count; Prometheus metrics for outcomes, latency, tokens, guardrail hits, fallbacks and
   circuit state; a request ID on every response and log line.
 - **Evaluation.** 63 cases measure quality, injection resistance and safety parity across
-  English, MSA and Egyptian Arabic, with the guardrails on and off.
+  English, MSA and Egyptian Arabic, with the guardrails on and off. The first real run found
+  three bugs (refusals shown as quotes, Chinese characters inside an Arabic quote, stalled
+  calls failing requests); after the fixes every quality case passed on the first answer with a
+  median latency of 0.92s. It also found that the same harmful topic is refused in one
+  language and answered in another. [Results](evals/README.md#results).
 - **A frontend that shows it.** Errors, rate-limit warnings and connection loss appear as
   accessible notifications with a reference to the request; quotes are kept in a searchable
   history with favorites (in the browser only) and can be exported as images sized for
@@ -117,10 +121,10 @@ Environment variables, or a `.env` file. The ones you are most likely to change:
 | Setting | Default | |
 |---|---|---|
 | `GEMINI_API_KEY` | | Required |
-| `DEFAULT_MODEL` | `gemini-2.5-flash` | With `THINKING_BUDGET=0`, thinking is off |
-| `FALLBACK_MODELS` | `[]` | JSON list of specs, e.g. `["gemini-3.5-flash-lite@minimal"]` |
+| `DEFAULT_MODEL` | `gemini-3.5-flash-lite@minimal` | A model spec: `name@<thinking level>` (3.x) or `name@<budget>` (2.5) |
+| `FALLBACK_MODELS` | `["gemini-2.5-flash-lite@0"]` | JSON list of specs, tried in order |
 | `REQUEST_TIMEOUT` | `30` | Seconds per request, across retries and fallbacks |
-| `LLM_ATTEMPT_TIMEOUT` | `15` | Seconds per model call |
+| `LLM_ATTEMPT_TIMEOUT` | `10` | Seconds per model call; a stalled call is retried once |
 | `GUARDRAILS_ENABLED` | `true` | Off skips the injection check and stops enforcing answer checks |
 | `MAX_GENERATION_ATTEMPTS` | `2` | Answers per request, counting the regeneration |
 | `RATE_LIMIT_PER_CLIENT` / `RATE_LIMIT_GLOBAL` | `10` / `120` | Quotes per minute |
