@@ -34,7 +34,7 @@ A powerful full-stack AI-powered quote generator with a stunning React frontend 
 - **Animated Background**: Dynamic particle effects for visual appeal
 - **Mobile-First Design**: Fully responsive layout optimized for all devices
 - **Tailwind CSS**: Modern, utility-first styling with custom purple theme
-- **Real-time Feedback**: Loading states and error handling
+- **Notifications**: Errors, rate-limit warnings, copy confirmations and connection loss appear as accessible toasts, and the last quote stays on screen
 - **Copy to Clipboard**: Easy quote sharing functionality (نسخ الاقتباس / Copy Quote)
 - **Smooth Animations**: Framer Motion for fluid transitions
 
@@ -72,6 +72,7 @@ Swan_Quote_Generator/
 │   │   └── components/
 │   │       ├── AnimatedBackground.js  # Canvas-based particle effects
 │   │       ├── QuoteGenerator.js      # Main UI component
+│   │       ├── Toast.js               # Notifications (usage notes at the top)
 │   │       ├── FluidCursor.js         # Custom cursor effects
 │   │       └── Navigation.js
 │   └── build/                   # Production build (served by FastAPI)
@@ -294,6 +295,9 @@ Every error body is `{"detail": "<message>"}`, and the message is safe to show t
 | 502 | Gemini returned an error or no quote |
 | 503 | The Gemini quota is used up for now |
 | 504 | Gemini took longer than `REQUEST_TIMEOUT` seconds |
+
+Allowed quote responses carry `X-RateLimit-Limit` and `X-RateLimit-Remaining` for the
+per-client limit; the UI uses them to warn when two quotes or fewer are left.
 
 The rate limits count per uvicorn worker, in memory. The client is identified by
 `CF-Connecting-IP` (Cloudflare) or `X-Forwarded-For`; a client that bypasses the proxy

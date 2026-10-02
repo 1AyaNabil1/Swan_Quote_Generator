@@ -1,4 +1,33 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import { useToast } from './Toast';
+
+// Messages written in the browser; the server's own messages are in English
+const MESSAGES = {
+  copied: { en: 'Quote copied to clipboard.', ar: 'تم نسخ الاقتباس.' },
+  copiedInstead: {
+    en: "Sharing isn't supported on this device, so the quote was copied instead.",
+    ar: 'المشاركة غير مدعومة على هذا الجهاز، لذا نُسخ الاقتباس بدلًا منها.',
+  },
+  copyFailed: {
+    en: "Couldn't copy the quote. Select it and copy it yourself.",
+    ar: 'تعذّر نسخ الاقتباس. حدّده وانسخه يدويًا.',
+  },
+  unreachable: {
+    en: "Couldn't reach Swan. Check your connection and try again.",
+    ar: 'تعذّر الوصول إلى Swan. تحقّق من اتصالك وحاول مرة أخرى.',
+  },
+  offline: {
+    en: "You're offline. Swan needs a connection to write quotes.",
+    ar: 'أنت غير متصل بالإنترنت. يحتاج Swan إلى اتصال لكتابة الاقتباسات.',
+  },
+  online: { en: 'Back online.', ar: 'عاد الاتصال بالإنترنت.' },
+  // Indexed by how many quotes are left this minute
+  quotesLeft: [
+    { en: 'That was your last quote for this minute.', ar: 'كان هذا آخر اقتباس لك في هذه الدقيقة.' },
+    { en: '1 quote left this minute.', ar: 'تبقّى لك اقتباس واحد في هذه الدقيقة.' },
+    { en: '2 quotes left this minute.', ar: 'تبقّى لك اقتباسان في هذه الدقيقة.' },
+  ],
+};
 
 const QuoteGenerator = () => {
   const [quote, setQuote] = useState('');
@@ -8,13 +37,26 @@ const QuoteGenerator = () => {
   const [style, setStyle] = useState('');
   const [language, setLanguage] = useState('en');
   const [loading, setLoading] = useState(false);
-  const [quoteCount, setQuoteCount] = useState(0);
   const [showShareMenu, setShowShareMenu] = useState(false);
+  const toast = useToast();
+  const dir = language === 'ar' ? 'rtl' : 'ltr';
 
   const categories = [
     'motivation', 'inspiration', 'wisdom', 'humor',
     'love', 'success', 'life', 'friendship', 'happiness', 'random'
   ];
+
+  useEffect(() => {
+    const options = { id: 'network', dir: language === 'ar' ? 'rtl' : 'ltr' };
+    const goneOffline = () => toast.error(MESSAGES.offline[language], { ...options, duration: 0 });
+    const backOnline = () => toast.success(MESSAGES.online[language], options);
+    window.addEventListener('offline', goneOffline);
+    window.addEventListener('online', backOnline);
+    return () => {
+      window.removeEventListener('offline', goneOffline);
+      window.removeEventListener('online', backOnline);
+    };
+  }, [toast, language]);
 
   const handleGenerateQuote = async () => {
     setLoading(true);
@@ -47,28 +89,44 @@ const QuoteGenerator = () => {
         const error = new Error(
           typeof errorData.detail === 'string' ? errorData.detail : 'Failed to generate quote.'
         );
-        error.fromServer = true;
+        error.status = response.status;
         throw error;
       }
 
       const data = await response.json();
       setQuote(data.quote);
       setAuthor(data.author || 'Swan');
-      setQuoteCount(prev => prev + 1);
+      toast.dismiss('generate');
+
+      const left = response.headers.get('X-RateLimit-Remaining');
+      const warning = left === null ? undefined : MESSAGES.quotesLeft[Number(left)];
+      if (warning) toast.warning(warning[language], { id: 'rate-limit', dir });
     } catch (error) {
       console.error('Error generating quote:', error);
-      setQuote(error.fromServer ? error.message : 'Failed to generate quote.');
-      setAuthor('Swan');
+      // The last quote stays on screen; the problem is shown as a notification
+      if (error.status === 429) {
+        toast.warning(error.message, { id: 'rate-limit' });
+      } else if (error.status) {
+        toast.error(error.message, { id: 'generate' });
+      } else {
+        toast.error(MESSAGES.unreachable[language], { id: 'generate', dir });
+      }
     } finally {
       setLoading(false);
     }
   };
 
-  const handleCopyQuote = () => {
-    if (quote) {
-      navigator.clipboard.writeText(`"${quote}" - ${author}`);
-      alert('Quote copied to clipboard!');
+  const copyQuote = async (copiedMessage) => {
+    try {
+      await navigator.clipboard.writeText(`"${quote}" - ${author}`);
+      toast.success(copiedMessage[language], { dir });
+    } catch (err) {
+      toast.error(MESSAGES.copyFailed[language], { dir });
     }
+  };
+
+  const handleCopyQuote = () => {
+    if (quote) copyQuote(MESSAGES.copied);
   };
 
   const handleShareQuote = async (platform) => {
@@ -101,8 +159,7 @@ const QuoteGenerator = () => {
         }
       } else {
         // Fallback: copy to clipboard if Web Share not supported
-        navigator.clipboard.writeText(quoteText);
-        alert('Quote copied to clipboard! (Share not supported on this device)');
+        copyQuote(MESSAGES.copiedInstead);
       }
     }
   };
@@ -331,6 +388,10 @@ const QuoteGenerator = () => {
           </div>
         </div>
       </div>
+
+      <p className="sr-only" aria-live="polite">
+        {quote && `${quote} — ${author}`}
+      </p>
 
       {/* Footer - Smaller on mobile */}
       <footer className="text-center pb-4 md:pb-6 flex-shrink-0">

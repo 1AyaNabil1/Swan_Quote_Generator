@@ -62,6 +62,22 @@ const response = await fetch('/api/quotes/generate', {
 });
 ```
 
+## Notifications
+
+`src/components/Toast.js` provides the toasts. The app is wrapped in `<ToastProvider>`;
+any component can then call:
+
+```javascript
+const toast = useToast();
+toast.success('Quote copied to clipboard.');
+toast.error(message, { id: 'generate' }); // same id replaces instead of stacking
+toast.warning(message, { dir: 'rtl' });   // Arabic text
+toast.info(message, { duration: 0 });     // stays until dismissed
+```
+
+Errors and warnings are announced to screen readers immediately (`role="alert"`), the
+others politely. Toasts pause while hovered or focused and close with their button or
+Escape.
 
 ---
 

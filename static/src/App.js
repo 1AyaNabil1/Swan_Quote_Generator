@@ -1,6 +1,7 @@
 import React from 'react';
 import AnimatedBackground from './components/AnimatedBackground';
 import QuoteGenerator from './components/QuoteGenerator';
+import { ToastProvider } from './components/Toast';
 import './App.css';
 
 function App() {
@@ -11,7 +12,9 @@ function App() {
       
       {/* Main Content */}
       <main className="relative z-10 h-full">
-        <QuoteGenerator />
+        <ToastProvider>
+          <QuoteGenerator />
+        </ToastProvider>
       </main>
     </div>
   );
