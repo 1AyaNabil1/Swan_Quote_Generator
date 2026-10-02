@@ -19,7 +19,7 @@ from app import observability
 from app.api.routes import quote_router
 from app.api.routes.quote_routes import circuit_breakers
 from app.config import settings
-from app.llm.factory import model_specs
+from app.llm.factory import model_specs, primary_spec
 
 
 # Configure logging; every line carries the request ID
@@ -68,7 +68,7 @@ app.middleware("http")(observability.observe_http)
 # Include API routers
 app.include_router(quote_router)
 
-observability.BUILD_INFO.labels(settings.app_version, settings.default_model).set(1)
+observability.BUILD_INFO.labels(settings.app_version, primary_spec().name).set(1)
 REGISTRY.register(observability.CircuitCollector(circuit_breakers))
 
 
@@ -78,7 +78,7 @@ async def health_check() -> dict[str, object]:
     return {
         "status": "healthy",
         "version": settings.app_version,
-        "model": settings.default_model,
+        "model": primary_spec().name,
         "models": [spec.name for spec in model_specs()],
         "guardrails": settings.guardrails_enabled,
     }

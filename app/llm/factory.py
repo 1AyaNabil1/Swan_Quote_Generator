@@ -9,10 +9,19 @@ from app.llm.gemini import GeminiProvider, ModelSpec
 from app.llm.resilience import ResilientLLM
 
 
+def primary_spec() -> ModelSpec:
+    spec = ModelSpec.parse(settings.default_model)
+    # THINKING_BUDGET predates model specs and only means something to 2.5 models;
+    # 3.x models reject a budget or ignore it, and take "name@<level>" instead
+    unset = spec.thinking_budget is None and spec.thinking_level is None
+    if unset and settings.thinking_budget is not None and spec.name.startswith("gemini-2"):
+        return ModelSpec(spec.name, thinking_budget=settings.thinking_budget)
+    return spec
+
+
 def model_specs() -> list[ModelSpec]:
     """The primary model, then the fallbacks, in the order they are tried."""
-    primary = ModelSpec(settings.default_model, thinking_budget=settings.thinking_budget)
-    return [primary, *(ModelSpec.parse(spec) for spec in settings.fallback_models)]
+    return [primary_spec(), *(ModelSpec.parse(spec) for spec in settings.fallback_models)]
 
 
 def build_llm() -> ResilientLLM:

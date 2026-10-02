@@ -171,19 +171,31 @@ def main(argv: list[str] | None = None) -> Path:
         "--rpm", type=float, default=8, help="cases started per minute; 0 for no limit"
     )
     parser.add_argument("--fake", action="store_true", help="use an offline stand-in model")
+    parser.add_argument(
+        "--model",
+        help='a model spec to test instead of DEFAULT_MODEL, e.g. "gemini-3.6-flash@minimal"',
+    )
     parser.add_argument("--out", type=Path, default=REPORTS)
     args = parser.parse_args(argv)
 
+    if args.model:  # one model, no fallbacks, so the report is about that model
+        settings.default_model = args.model
+        settings.fallback_models = []
     cases = load_cases(suites=set(args.suites or []))
     llm = build_llm(args.fake)
-    models = "fake-model" if args.fake else ", ".join(p.name for p in llm.providers)
+    models = (
+        "fake-model"
+        if args.fake
+        else ", ".join(str(getattr(p, "spec", p.name)) for p in llm.providers)
+    )
     print(f"Running {len(cases)} cases x {len(args.modes)} modes on {models}", file=sys.stderr)
     results = asyncio.run(
         run(cases, args.modes, llm, args.concurrency, 0 if args.fake else args.rpm)
     )
 
     stamp = datetime.now(UTC).strftime("%Y-%m-%d-%H%M")
-    name = f"{stamp}-{'fake' if args.fake else settings.default_model}"
+    model_name = settings.default_model.replace("@", "-")
+    name = f"{stamp}-{'fake' if args.fake else model_name}"
     args.out.mkdir(parents=True, exist_ok=True)
     meta = {
         "date": datetime.now(UTC).isoformat(timespec="seconds"),

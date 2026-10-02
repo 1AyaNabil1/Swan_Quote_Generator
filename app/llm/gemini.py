@@ -71,6 +71,13 @@ class ModelSpec:
             raise ValueError(f"Unknown thinking level in model spec: {text!r}")
         return cls(name, thinking_level=level)
 
+    def __str__(self) -> str:
+        if self.thinking_budget is not None:
+            return f"{self.name}@{self.thinking_budget}"
+        if self.thinking_level is not None:
+            return f"{self.name}@{self.thinking_level.lower()}"
+        return self.name
+
     def thinking_config(self) -> types.ThinkingConfig | None:
         if self.thinking_budget is not None:
             return types.ThinkingConfig(thinking_budget=self.thinking_budget)
