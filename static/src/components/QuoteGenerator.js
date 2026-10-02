@@ -36,6 +36,7 @@ const QuoteGenerator = () => {
   const [topic, setTopic] = useState('');
   const [style, setStyle] = useState('');
   const [language, setLanguage] = useState('en');
+  const [quoteLanguage, setQuoteLanguage] = useState('en'); // what the shown quote is written in
   const [loading, setLoading] = useState(false);
   const [showShareMenu, setShowShareMenu] = useState(false);
   const toast = useToast();
@@ -96,6 +97,7 @@ const QuoteGenerator = () => {
       const data = await response.json();
       setQuote(data.quote);
       setAuthor(data.author || 'Swan');
+      setQuoteLanguage(requestBody.language);
       toast.dismiss('generate');
 
       const left = response.headers.get('X-RateLimit-Remaining');
@@ -172,7 +174,7 @@ const QuoteGenerator = () => {
           {/* Quote counter removed */}
         </div>
         <a
-          href="https://github.com/1AyaNabil1/Ai-Quotes-Generator"
+          href="https://github.com/1AyaNabil1/Swan_Quote_Generator"
           target="_blank"
           rel="noopener noreferrer"
           className="text-white/60 hover:text-white transition-colors"
@@ -207,13 +209,13 @@ const QuoteGenerator = () => {
           <div className="flex items-center justify-center order-2 lg:order-1">
             <div className="w-full max-w-2xl border border-purple-primary/20 rounded-xl md:rounded-2xl p-4 md:p-8 lg:p-12 min-h-[180px] md:min-h-[280px] flex items-center justify-center bg-gradient-to-br from-purple-primary/20 via-purple-accent/10 to-transparent backdrop-blur-sm">
               {quote ? (
-                <div className="space-y-3 md:space-y-6 w-full" dir={language === 'ar' ? 'rtl' : 'ltr'}>
+                <div className="space-y-3 md:space-y-6 w-full" dir={quoteLanguage === 'ar' ? 'rtl' : 'ltr'}>
                   <div
                     className="text-lg md:text-2xl lg:text-3xl font-serif text-white/90 leading-relaxed"
                     style={{
-                      fontFamily: language === 'ar' ? "'Amiri', 'Georgia', serif" : "'Crimson Text', 'Georgia', serif",
-                      fontStyle: language === 'ar' ? 'normal' : 'italic',
-                      lineHeight: language === 'ar' ? '2' : '1.6'
+                      fontFamily: quoteLanguage === 'ar' ? "'Amiri', 'Georgia', serif" : "'Crimson Text', 'Georgia', serif",
+                      fontStyle: quoteLanguage === 'ar' ? 'normal' : 'italic',
+                      lineHeight: quoteLanguage === 'ar' ? '2' : '1.6'
                     }}
                   >
                     "{quote}"
@@ -222,8 +224,8 @@ const QuoteGenerator = () => {
                     <div
                       className="text-sm md:text-base text-purple-light/80 font-light"
                       style={{
-                        textAlign: language === 'ar' ? 'left' : 'right',
-                        fontFamily: language === 'ar' ? "'Cairo', sans-serif" : "'Poppins', 'Inter', sans-serif"
+                        textAlign: quoteLanguage === 'ar' ? 'left' : 'right',
+                        fontFamily: quoteLanguage === 'ar' ? "'Cairo', sans-serif" : "'Poppins', 'Inter', sans-serif"
                       }}
                     >
                       — {author}
@@ -398,7 +400,7 @@ const QuoteGenerator = () => {
         <p className="text-white/60 text-xs md:text-sm font-light" style={{ fontFamily: "'Poppins', 'Inter', sans-serif" }}>
           Built by{' '}
           <a
-            href="https://ayanexus.dev/"
+            href="https://ayanabil.vercel.app/"
             target="_blank"
             rel="noopener noreferrer"
             className="text-purple-light hover:text-purple-accent transition-colors font-medium"
