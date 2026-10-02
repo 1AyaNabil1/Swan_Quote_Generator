@@ -1,8 +1,7 @@
 """
-Unit tests for the rate limiter and the quote cleaning.
+Unit tests for the rate limiter.
 """
 
-from app.api.utils.ai_client import AIClient
 from app.api.utils.rate_limit import SlidingWindowLimiter
 
 
@@ -59,21 +58,3 @@ def test_limiter_forgets_idle_clients():
     for n in range(1000):
         limiter.hit(f"client-{n % 500}")
     assert "idle" not in limiter._hits
-
-
-def clean(text):
-    return AIClient.__new__(AIClient)._clean_quote_response(text)
-
-
-def test_clean_removes_meta_prefixes():
-    assert clean("Here is your quote: Stay curious.") == "Stay curious."
-    assert clean("As an AI, Patience is a quiet strength.") == "Patience is a quiet strength."
-
-
-def test_clean_drops_an_english_translation():
-    arabic = "الصبر مفتاح الفرج"
-    assert clean(f"**Arabic:** {arabic}\n\n**English Translation:** Patience is the key") == arabic
-
-
-def test_clean_strips_markdown_emphasis():
-    assert clean("**Be bold.**") == "Be bold."

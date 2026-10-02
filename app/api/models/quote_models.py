@@ -80,6 +80,8 @@ class QuoteResponse(BaseModel):
                 "quote": "Keep pushing forward, for perseverance turns dreams into achievements.",
                 "author": "Swan",
                 "category": "motivation",
+                "language": "en",
+                "model": "gemini-2.5-flash",
                 "timestamp": "2025-10-27T18:30:00Z",
             }
         }
@@ -88,6 +90,10 @@ class QuoteResponse(BaseModel):
     quote: str = Field(..., description="The generated quote")
     author: str = Field(default="Swan", description="Author attribution")
     category: str = Field(..., description="Category of the quote")
+    language: str = Field(..., description="Language of the quote: 'en' or 'ar'")
+    model: str = Field(
+        ..., description="The model that wrote it; a fallback model if the default failed"
+    )
     timestamp: str = Field(..., description="Generation timestamp")
 
 
