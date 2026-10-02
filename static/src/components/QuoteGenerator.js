@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import useQuoteHistory from '../hooks/useQuoteHistory';
 import HistoryPanel from './HistoryPanel';
+import Select from './Select';
 import ShareImage from './ShareImage';
 import { useToast } from './Toast';
 
@@ -365,57 +366,35 @@ const QuoteGenerator = () => {
           {/* Controls - Show first on mobile for better UX */}
           <div className="flex items-start md:items-center justify-center order-1 lg:order-2">
             <div className="w-full max-w-md space-y-3 md:space-y-5" style={{ fontFamily: "'Poppins', 'Inter', sans-serif" }}>
-              <div>
-                <label className="block text-white/70 font-light mb-1.5 md:mb-2 text-xs md:text-sm">
-                  Category
-                </label>
-                <select
-                  value={category}
-                  onChange={(e) => setCategory(e.target.value)}
-                  className="w-full px-3 md:px-4 py-2 md:py-2.5 bg-black/30 border border-purple-primary/30 rounded-lg text-white text-sm focus:outline-none focus:border-purple-accent transition-all appearance-none pr-8 cursor-pointer"
-                  style={{
-                    fontFamily: "'Poppins', 'Inter', sans-serif",
-                    backgroundImage: "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20' stroke='%23a78bfa'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M6 8l4 4 4-4'%3E%3C/path%3E%3C/svg%3E\")",
-                    backgroundRepeat: 'no-repeat',
-                    backgroundPosition: 'right 0.75rem center',
-                    backgroundSize: '1rem'
-                  }}
-                >
-                  {categories.map(cat => (
-                    <option key={cat} value={cat} className="bg-black">
-                      {cat.charAt(0).toUpperCase() + cat.slice(1)}
-                    </option>
-                  ))}
-                </select>
-              </div>
+              <Select
+                id="category"
+                label="Category"
+                value={category}
+                onChange={setCategory}
+                options={categories.map((cat) => ({ value: cat, label: cat.charAt(0).toUpperCase() + cat.slice(1) }))}
+                font="'Poppins', 'Inter', sans-serif"
+              />
+
+              <Select
+                id="language"
+                label="Language"
+                value={language}
+                onChange={setLanguage}
+                options={[
+                  { value: 'en', label: 'English' },
+                  { value: 'ar', label: 'العربية (Arabic)' },
+                ]}
+                font="'Poppins', 'Inter', sans-serif"
+              />
 
               <div>
-                <label className="block text-white/70 font-light mb-1.5 md:mb-2 text-xs md:text-sm">
-                  Language
-                </label>
-                <select
-                  value={language}
-                  onChange={(e) => setLanguage(e.target.value)}
-                  className="w-full px-3 md:px-4 py-2 md:py-2.5 bg-black/30 border border-purple-primary/30 rounded-lg text-white text-sm focus:outline-none focus:border-purple-accent transition-all appearance-none pr-8 cursor-pointer"
-                  style={{
-                    fontFamily: "'Poppins', 'Inter', sans-serif",
-                    backgroundImage: "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20' stroke='%23a78bfa'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M6 8l4 4 4-4'%3E%3C/path%3E%3C/svg%3E\")",
-                    backgroundRepeat: 'no-repeat',
-                    backgroundPosition: 'right 0.75rem center',
-                    backgroundSize: '1rem'
-                  }}
-                >
-                  <option value="en" className="bg-black">English</option>
-                  <option value="ar" className="bg-black">العربية (Arabic)</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-white/70 font-light mb-1.5 md:mb-2 text-xs md:text-sm">
+                <label htmlFor="topic" className="block text-white/70 font-light mb-1.5 md:mb-2 text-xs md:text-sm">
                   Topic (optional)
                 </label>
                 <input
+                  id="topic"
                   type="text"
+                  autoComplete="off"
                   value={topic}
                   onChange={(e) => setTopic(e.target.value)}
                   placeholder="e.g., perseverance, courage..."
@@ -425,11 +404,13 @@ const QuoteGenerator = () => {
               </div>
 
               <div>
-                <label className="block text-white/70 font-light mb-1.5 md:mb-2 text-xs md:text-sm">
+                <label htmlFor="style" className="block text-white/70 font-light mb-1.5 md:mb-2 text-xs md:text-sm">
                   Style (optional)
                 </label>
                 <input
+                  id="style"
                   type="text"
+                  autoComplete="off"
                   value={style}
                   onChange={(e) => setStyle(e.target.value)}
                   placeholder="e.g., Shakespeare, modern..."

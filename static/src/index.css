@@ -37,3 +37,18 @@ code {
     height: 100dvh;
   }
 }
+
+/* Dark native widgets (scrollbars, date pickers) to match the theme */
+:root {
+  color-scheme: dark;
+}
+
+/* Chrome paints autofilled or previewed fields light; keep them on theme */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus {
+  -webkit-text-fill-color: #ffffff;
+  -webkit-box-shadow: 0 0 0 1000px #0b0613 inset;
+  caret-color: #ffffff;
+  transition: background-color 9999s ease-in-out 0s;
+}
