@@ -1,70 +1,54 @@
-# AI Quote Generator - React Frontend
+# Swan on Zibby: the frontend
 
-A beautiful, dark-themed React application with purple accents, animated background particles, and fluid cursor effects.
-
-## Features
-
-- Dark theme with purple gradient design
-- Animated background with floating purple particles
-- Responsive design with Tailwind CSS
-- Single-page application
-
-## Getting Started
-
-### Installation
+On the `zibby` branch this React app is the whole of Swan. It is built as a static bundle
+that [Zibby](https://zibby.run) serves, and every quote is one call through Zibby's
+`/api/ai`, paid in the signed-in person's Zibby credits. There is no server, no API key and
+no provider SDK in it; the Python app in the repository root is not part of the build.
 
 ```bash
-npm install
+npm ci          # from the repository root
+npm run dev     # http://localhost:5173, on the kit's mock: no network, no credits
+npm test        # Vitest: guardrails, the Zibby flow, the screen
+npm run build   # dist/, with dist/zibby-sample.json
 ```
 
-### Development
+Zibby builds it the same way: install `npm ci`, build `npm run build`, output `dist`.
 
-```bash
-npm start
-```
+## What moved from the server
 
-Runs the app in development mode at [http://localhost:3000](http://localhost:3000).
+| Server (`app/`) | Here (`src/lib/`) |
+| --- | --- |
+| `guardrails/normalize.py`, `injection.py`, `output.py` | `normalize.js`, `injection.js`, `output.js`, rule for rule |
+| `api/utils/prompt_builder.py`, the system instruction | `prompt.js`, plus the Anthropic request body |
+| `controllers/quote_controller.py` | `quote.js`, on Zibby's rules |
 
-### Build
+`scripts/guardrail_parity.py` runs the Python guardrails over every string in
+`tests/test_guardrails.py` and `evals/cases.jsonl` and writes
+`src/lib/parity.fixture.json`; `parity.test.js` checks that the JavaScript says exactly the
+same about each one, and CI checks that the fixture is current.
 
-```bash
-npm run build
-```
+What changed on the way, because a person pays for each call:
 
-Builds the app for production to the `build` folder.
+- **One press, one call.** The server regenerated a failed answer by itself. Here a failed
+  check is shown with its reasons and a "Try again" button that sends the same request
+  with those reasons attached, once. An answer cut off at the length limit gets no paid
+  retry, since it would be cut off again. A refusal is final.
+- **Zibby owns the rest.** Retries, fallbacks, circuit breakers and rate limits are gone;
+  credits, the spending cap, sign-in and top-up are Zibby's, reached through the kit.
+- **The charge** shown is the run's own terminal frame: "Charged 1 credit.", "Nothing was
+  charged.", "Charge unknown" with the request id, or "Comped" for runs on Zibby.
+- **The model** is Claude Haiku 4.5 (`src/lib/prompt.js`). Zibby has no Gemini text model
+  yet.
+- **Nothing leaves the app's frame**: no GitHub link, no share links to X, Facebook or
+  WhatsApp. Sharing uses Zibby's own share sheet; copying and the quote images stay.
+- **Fonts** (Amiri, Cairo, Crimson Text, Poppins) are bundled from Fontsource instead of
+  Google Fonts.
 
-## Technologies Used
-
-- React 18
-- Tailwind CSS
-- React SplashCursor
-- JavaScript (ES6+)
-
-## Customization
-
-The purple theme colors are defined in `tailwind.config.js`:
-- `purple-primary`: #6b46c1
-- `purple-secondary`: #553c9a
-- `purple-accent`: #7c3aed
-- `purple-light`: #8b5cf6
-
-## API Integration
-
-Update the API endpoint in `src/components/QuoteGenerator.js` to connect with your backend:
-
-```javascript
-const response = await fetch('/api/quotes/generate', {
-  method: 'POST',
-  headers: {
-    'Content-Type': 'application/json',
-  },
-  body: JSON.stringify({ topic: topic || 'inspiration' }),
-});
-```
+History and favorites stay in this browser's localStorage, as before.
 
 ## Notifications
 
-`src/components/Toast.js` provides the toasts. The app is wrapped in `<ToastProvider>`;
+`src/components/Toast.jsx` provides the toasts. The app is wrapped in `<ToastProvider>`;
 any component can then call:
 
 ```javascript
@@ -73,6 +57,7 @@ toast.success('Quote copied to clipboard.');
 toast.error(message, { id: 'generate' }); // same id replaces instead of stacking
 toast.warning(message, { dir: 'rtl' });   // Arabic text
 toast.info(message, { duration: 0 });     // stays until dismissed
+toast.error(message, { action: { label: 'Top up', onClick } }); // one button
 ```
 
 Errors and warnings are announced to screen readers immediately (`role="alert"`), the

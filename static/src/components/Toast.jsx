@@ -11,7 +11,8 @@
  *   toast.dismiss(id);
  *
  * Options: `id` (a toast with the same id is replaced instead of stacked), `duration`
- * in ms (defaults per type below), `dir` ('rtl' for Arabic text).
+ * in ms (defaults per type below), `dir` ('rtl' for Arabic text), `action`
+ * ({ label, onClick }: one button, which also closes the toast).
  *
  * Toasts stack top-right (top-center on mobile), never block the page, pause while
  * hovered or focused, and close with their button or Escape. Errors and warnings are
@@ -63,6 +64,7 @@ export function ToastProvider({ children }) {
       message,
       duration: options.duration ?? DURATIONS[type],
       dir: options.dir,
+      action: options.action,
     };
     setToasts((list) => [...list.filter((t) => t.id !== toast.id), toast].slice(-MAX_TOASTS));
     return toast.id;
@@ -143,7 +145,21 @@ function Toast({ toast, onDismiss }) {
       >
         <path strokeLinecap="round" strokeLinejoin="round" d={ICONS[toast.type]} />
       </svg>
-      <p className="flex-1 leading-relaxed">{toast.message}</p>
+      <div className="flex-1">
+        <p className="leading-relaxed">{toast.message}</p>
+        {toast.action && (
+          <button
+            type="button"
+            onClick={() => {
+              onDismiss(toast.id);
+              toast.action.onClick();
+            }}
+            className="mt-2 rounded-lg border border-purple-light/50 bg-purple-primary/30 px-3 py-1 text-xs text-white transition-colors hover:bg-purple-primary/50 focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-light"
+          >
+            {toast.action.label}
+          </button>
+        )}
+      </div>
       <button
         type="button"
         onClick={() => onDismiss(toast.id)}

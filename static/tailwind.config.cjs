@@ -1,9 +1,10 @@
 /** @type {import('tailwindcss').Config} */
 module.exports = {
-  content: [
-    "./src/**/*.{js,jsx,ts,tsx}",
-    "./public/index.html"
-  ],
+  // Relative to this file: Vite runs from the repository root.
+  content: {
+    relative: true,
+    files: ["./src/**/*.{js,jsx}", "./index.html"],
+  },
   theme: {
     extend: {
       colors: {

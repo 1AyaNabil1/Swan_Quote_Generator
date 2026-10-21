@@ -20,21 +20,30 @@ jobs:
       - run: mypy
       - run: python -m pytest
 
+  # The Zibby app: the React frontend in static/, built from the root as on Zibby's builder
   frontend:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: static
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: 24
           cache: npm
-          cache-dependency-path: static/package-lock.json
       - run: npm ci
-      - run: npm test -- --watchAll=false
-      - run: npm run build  # CI=true makes lint warnings fail the build
+      - run: npm test
+      - run: npm run build
+      - name: The bundle opens by itself
+        run: test -f dist/index.html && test -f dist/zibby-sample.json
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: requirements.txt
+      - name: The browser guardrails still match the Python ones
+        run: |
+          pip install -q -r requirements.txt
+          python scripts/guardrail_parity.py
+          git diff --exit-code -- static/src/lib/parity.fixture.json
 
   docker:
     runs-on: ubuntu-latest

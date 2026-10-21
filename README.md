@@ -42,6 +42,14 @@ where strangers type the input:
 - **Tests.** 162 backend tests with a fake Gemini, frontend tests, strict mypy, Ruff, and a
   Docker smoke test in CI.
 
+## Swan on Zibby (this branch)
+
+The `zibby` branch is Swan as a [Zibby](https://zibby.run) app: the React frontend alone,
+built as a static bundle, with the guardrails ported to the browser and every quote one
+call through Zibby, paid in Zibby credits. Zibby builds it with `npm ci`, `npm run build`
+and the output directory `dist`. What moved and what changed is in
+[static/README.md](static/README.md).
+
 ## How a quote is made
 
 ```mermaid

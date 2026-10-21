@@ -1,11 +1,14 @@
 import React, { useCallback, useEffect, useState } from 'react';
+import { navigateHost, shareLink, streamZibbyAi, ZIBBY_COMPED_LINE, ZIBBY_CREDITS_PATH } from '@zibby-run/app-kit';
+import { useAvgActionCr, useComped, useCreditBalance } from '@zibby-run/app-kit/react';
 import useQuoteHistory from '../hooks/useQuoteHistory';
+import { generateQuote, QuoteError } from '../lib/quote';
+import { CATEGORIES, QUOTE_ACTION, QUOTE_ESTIMATE_CR } from '../lib/prompt';
 import HistoryPanel from './HistoryPanel';
 import Select from './Select';
 import ShareImage from './ShareImage';
 import { useToast } from './Toast';
 
-// Messages written in the browser; the server's own messages are in English
 const MESSAGES = {
   copied: { en: 'Quote copied to clipboard.', ar: 'تم نسخ الاقتباس.' },
   copiedInstead: {
@@ -20,6 +23,36 @@ const MESSAGES = {
     en: "Couldn't reach Swan. Check your connection and try again.",
     ar: 'تعذّر الوصول إلى Swan. تحقّق من اتصالك وحاول مرة أخرى.',
   },
+  // What a failed run says, by QuoteError kind
+  input: {
+    en: 'Swan writes about a topic in a tone, and does not take instructions. Try another topic or style.',
+    ar: 'يكتب Swan عن موضوع بأسلوب ما، ولا يتلقى تعليمات. جرّب موضوعًا أو أسلوبًا آخر.',
+  },
+  refused: { en: 'The model declined this topic. Try another one.', ar: 'رفض النموذج هذا الموضوع. جرّب موضوعًا آخر.' },
+  truncated: {
+    en: "The quote ran past Swan's length limit. Try a shorter topic or style.",
+    ar: 'تجاوز الاقتباس الطول المسموح. جرّب موضوعًا أو أسلوبًا أقصر.',
+  },
+  checks: { en: "This answer didn't pass Swan's checks", ar: 'لم يجتز هذا الرد فحوص Swan' },
+  checksAgain: {
+    en: "The second answer didn't pass either. Try another topic or style.",
+    ar: 'لم يجتز الرد الثاني الفحوص أيضًا. جرّب موضوعًا أو أسلوبًا آخر.',
+  },
+  tryAgain: { en: 'Try again', ar: 'حاول مرة أخرى' },
+  credits: { en: "You're out of Zibby credits.", ar: 'نفد رصيدك على Zibby.' },
+  topUp: { en: 'Top up', ar: 'اشحن الرصيد' },
+  cap: {
+    en: 'Swan has spent a lot of credits in a short time. Continue?',
+    ar: 'أنفق Swan الكثير من الرصيد في وقت قصير. هل تتابع؟',
+  },
+  continue: { en: 'Continue', ar: 'تابع' },
+  'signed-out': { en: 'Sign in to Zibby to write quotes.', ar: 'سجّل الدخول إلى Zibby لكتابة الاقتباسات.' },
+  signIn: { en: 'Sign in', ar: 'تسجيل الدخول' },
+  locked: { en: 'Your Zibby account is on hold.', ar: 'حسابك على Zibby موقوف مؤقتًا.' },
+  busy: { en: 'Too many quotes at once. Wait a moment and try again.', ar: 'طلبات كثيرة في وقت واحد. انتظر قليلًا وحاول مرة أخرى.' },
+  server: { en: 'Something went wrong. Please try again in a moment.', ar: 'حدث خطأ ما. حاول مرة أخرى بعد قليل.' },
+  shareFailed: { en: "Couldn't share. Here is the link:", ar: 'تعذّرت المشاركة. هذا هو الرابط:' },
+  linkCopied: { en: 'Link copied.', ar: 'تم نسخ الرابط.' },
   offline: {
     en: "You're offline. Swan needs a connection to write quotes.",
     ar: 'أنت غير متصل بالإنترنت. يحتاج Swan إلى اتصال لكتابة الاقتباسات.',
@@ -30,15 +63,34 @@ const MESSAGES = {
   favorite: { en: 'Add to favorites', ar: 'أضف إلى المفضلة' },
   unfavorite: { en: 'Remove from favorites', ar: 'أزل من المفضلة' },
   image: { en: 'Image', ar: 'صورة' },
-  // Indexed by how many quotes are left this minute
-  quotesLeft: [
-    { en: 'That was your last quote for this minute.', ar: 'كان هذا آخر اقتباس لك في هذه الدقيقة.' },
-    { en: '1 quote left this minute.', ar: 'تبقّى لك اقتباس واحد في هذه الدقيقة.' },
-    { en: '2 quotes left this minute.', ar: 'تبقّى لك اقتباسان في هذه الدقيقة.' },
-  ],
 };
 
-const QuoteGenerator = () => {
+// Why an answer failed, in a few words, by check
+const CHECK_REASONS = {
+  language: { en: 'wrong language', ar: 'لغة غير مطلوبة' },
+  length: { en: 'wrong length', ar: 'طول غير مناسب' },
+  format: { en: 'extra text around the quote', ar: 'نص زائد حول الاقتباس' },
+  leak: { en: 'it repeated its instructions', ar: 'كرّر تعليماته' },
+  empty: { en: 'it was empty', ar: 'كان فارغًا' },
+};
+
+/** The only charge figure allowed is the run's own terminal frame (Zibby CONTRACT §2). */
+function chargeLine(charge, language) {
+  if (!charge) return null;
+  if (charge.comped) return ZIBBY_COMPED_LINE;
+  const ar = language === 'ar';
+  if (!charge.known) {
+    const id = charge.requestId ?? 'none';
+    return ar ? `التكلفة غير معروفة (رقم الطلب ${id}).` : `Charge unknown (request id ${id}).`;
+  }
+  if (charge.credits === 0) return ar ? 'لم يُخصم شيء.' : 'Nothing was charged.';
+  return ar
+    ? `خُصم ${charge.credits} من رصيدك.`
+    : `Charged ${charge.credits} credit${charge.credits === 1 ? '' : 's'}.`;
+}
+
+/** `stream` is Zibby's /api/ai client; tests hand in their own. */
+const QuoteGenerator = ({ stream = streamZibbyAi }) => {
   const history = useQuoteHistory();
   // Start from the last quote in this browser's history, if there is one
   const [last] = useState(() => history.items[0]);
@@ -50,10 +102,14 @@ const QuoteGenerator = () => {
   const [language, setLanguage] = useState('en');
   const [quoteLanguage, setQuoteLanguage] = useState(last?.language ?? 'en'); // what the shown quote is written in
   const [loading, setLoading] = useState(false);
-  const [showShareMenu, setShowShareMenu] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
   const [showImage, setShowImage] = useState(false);
   const [currentId, setCurrentId] = useState(last?.id ?? null); // the shown quote's history entry
+  const [charge, setCharge] = useState(null); // what the last run cost
+  const balance = useCreditBalance();
+  const comped = useComped();
+  const liveEstimate = useAvgActionCr(QUOTE_ACTION);
+  const estimate = comped ? null : `~${liveEstimate === null ? QUOTE_ESTIMATE_CR : Math.max(1, Math.round(liveEstimate))} cr`;
   const current = history.items.find((item) => item.id === currentId);
   // Stable, so the dialogs' effects (focus, Escape) don't rerun on every render
   const closeHistory = useCallback(() => setShowHistory(false), []);
@@ -61,10 +117,7 @@ const QuoteGenerator = () => {
   const toast = useToast();
   const dir = language === 'ar' ? 'rtl' : 'ltr';
 
-  const categories = [
-    'motivation', 'inspiration', 'wisdom', 'humor',
-    'love', 'success', 'life', 'friendship', 'happiness', 'random'
-  ];
+  const categories = CATEGORIES;
 
   useEffect(() => {
     const options = { id: 'network', dir: language === 'ar' ? 'rtl' : 'ltr' };
@@ -78,70 +131,78 @@ const QuoteGenerator = () => {
     };
   }, [toast, language]);
 
-  const handleGenerateQuote = async () => {
-    setLoading(true);
-    try {
-      const requestBody = {
-        category,
-        length: 'medium',
-        language: language
-      };
-
+  /**
+   * One press, one run. `repair` is the request that just failed Swan's checks and the
+   * checks' own words, for the one repair the person may ask for; `capAck` resends a
+   * run Zibby paused at the spending cap, byte for byte.
+   */
+  const handleGenerateQuote = async ({ repair = null, capAck = false } = {}) => {
+    const request = repair?.request ?? {
+      category,
+      length: 'medium',
+      language,
       // Only include topic and style if they have values
-      if (topic && topic.trim()) {
-        requestBody.topic = topic.trim();
-      }
-      if (style && style.trim()) {
-        requestBody.style = style.trim();
-      }
-
-      const response = await fetch('/api/quotes/generate', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(requestBody),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        // The server's messages are written to be shown; validation errors are lists
-        const error = new Error(
-          typeof errorData.detail === 'string' ? errorData.detail : 'Failed to generate quote.'
-        );
-        error.status = response.status;
-        error.requestId = response.headers.get('X-Request-ID');
-        throw error;
-      }
-
-      const data = await response.json();
-      setQuote(data.quote);
-      setAuthor(data.author || 'Swan');
-      setQuoteLanguage(requestBody.language);
+      ...(topic.trim() ? { topic: topic.trim() } : {}),
+      ...(style.trim() ? { style: style.trim() } : {}),
+    };
+    const hint = repair?.hint ?? '';
+    const words = (key) => MESSAGES[key][request.language];
+    const options = { id: 'generate', dir: request.language === 'ar' ? 'rtl' : 'ltr' };
+    setLoading(true);
+    toast.dismiss('generate');
+    try {
+      const result = await generateQuote(request, { stream, hint, capAck });
+      setQuote(result.quote);
+      setAuthor('Swan');
+      setQuoteLanguage(request.language);
+      setCharge(result.charge);
       setCurrentId(history.add({
-        quote: data.quote,
-        author: data.author || 'Swan',
-        category: data.category,
-        language: requestBody.language,
-        topic: requestBody.topic,
-        timestamp: data.timestamp,
+        quote: result.quote,
+        author: 'Swan',
+        category: request.category,
+        language: request.language,
+        topic: request.topic,
+        timestamp: new Date().toISOString(),
       }));
-      toast.dismiss('generate');
-
-      const left = response.headers.get('X-RateLimit-Remaining');
-      const warning = left === null ? undefined : MESSAGES.quotesLeft[Number(left)];
-      if (warning) toast.warning(warning[language], { id: 'rate-limit', dir });
     } catch (error) {
-      console.error('Error generating quote:', error);
       // The last quote stays on screen; the problem is shown as a notification
-      if (error.status === 429) {
-        toast.warning(error.message, { id: 'rate-limit' });
-      } else if (error.status) {
-        // A short reference for server-side failures, to find the request in the logs
-        const reference = error.status >= 500 && error.requestId ? ` (ref ${error.requestId.slice(0, 8)})` : '';
-        toast.error(error.message + reference, { id: 'generate' });
-      } else {
-        toast.error(MESSAGES.unreachable[language], { id: 'generate', dir });
+      if (!(error instanceof QuoteError)) throw error;
+      setCharge(error.charge);
+      const again = (next) => () => handleGenerateQuote(next);
+      if (error.kind === 'checks' && !repair) {
+        const reasons = error.checks.map((check) => CHECK_REASONS[check]?.[request.language]).filter(Boolean);
+        toast.warning(`${words('checks')}${reasons.length ? `: ${reasons.join(', ')}` : ''}.`, {
+          ...options,
+          duration: 0,
+          action: {
+            label: `${words('tryAgain')}${estimate ? ` (${estimate})` : ''}`,
+            onClick: again({ repair: { request, hint: error.hint } }),
+          },
+        });
+      } else if (error.kind === 'checks') {
+        toast.error(words('checksAgain'), options);
+      } else if (error.kind === 'cap') {
+        toast.warning(words('cap'), {
+          ...options,
+          duration: 0,
+          action: { label: words('continue'), onClick: again({ repair, capAck: true }) },
+        });
+      } else if (error.kind === 'credits') {
+        toast.error(words('credits'), {
+          ...options,
+          duration: 0,
+          action: { label: words('topUp'), onClick: () => navigateHost(ZIBBY_CREDITS_PATH) },
+        });
+      } else if (error.kind === 'signed-out') {
+        toast.error(words('signed-out'), {
+          ...options,
+          duration: 0,
+          action: { label: words('signIn'), onClick: () => navigateHost('/users/log-in') },
+        });
+      } else if (error.kind === 'network') {
+        toast.error(MESSAGES.unreachable[request.language], options);
+      } else if (error.kind !== 'aborted') {
+        toast.error(words(MESSAGES[error.kind] ? error.kind : 'server'), options);
       }
     } finally {
       setLoading(false);
@@ -161,40 +222,24 @@ const QuoteGenerator = () => {
     if (quote) copyQuote(MESSAGES.copied);
   };
 
-  const handleShareQuote = async (platform) => {
+  // Zibby shares the app's public page: no link may leave the app's frame.
+  const handleShareQuote = async () => {
     if (!quote) return;
-
-    const quoteText = `"${quote}" - ${author}`;
-    const encodedQuote = encodeURIComponent(quoteText);
-
-    let shareUrl = '';
-    if (platform === 'x') {
-      shareUrl = `https://twitter.com/intent/tweet?text=${encodedQuote}`;
-      window.open(shareUrl, '_blank', 'width=600,height=400');
-    } else if (platform === 'facebook') {
-      shareUrl = `https://www.facebook.com/sharer/sharer.php?quote=${encodedQuote}`;
-      window.open(shareUrl, '_blank', 'width=600,height=400');
-    } else if (platform === 'whatsapp') {
-      shareUrl = `https://wa.me/?text=${encodedQuote}`;
-      window.open(shareUrl, '_blank', 'width=600,height=400');
-    } else if (platform === 'native') {
-      // Use Web Share API for native sharing (works on mobile)
-      if (navigator.share) {
-        try {
-          await navigator.share({
-            title: 'Quote from Swan',
-            text: quoteText,
-          });
-        } catch (err) {
-          // User cancelled or error
-          console.log('Share cancelled');
-        }
-      } else {
-        // Fallback: copy to clipboard if Web Share not supported
-        copyQuote(MESSAGES.copiedInstead);
-      }
+    const text = `"${quote}" - ${author}`;
+    const result = await shareLink({ text: [...text].slice(0, 280).join(''), title: 'Swan' });
+    if (result.outcome === 'copied') toast.success(MESSAGES.linkCopied[language], { dir });
+    else if ((result.outcome === 'failed' || result.outcome === 'url') && result.url) {
+      toast.info(`${MESSAGES.shareFailed[language]} ${result.url}`, { dir, duration: 0 });
     }
   };
+
+  // Also shown when a charged answer failed the checks and no quote is on screen yet.
+  const line = chargeLine(charge, language);
+  const chargeNote = line && (
+    <p className="mt-3 text-xs font-light text-white/40" role="status" style={{ fontFamily: "'Poppins', 'Inter', sans-serif" }}>
+      {line}
+    </p>
+  );
 
   return (
     <div className="h-full flex flex-col">
@@ -212,21 +257,13 @@ const QuoteGenerator = () => {
           {MESSAGES.history[language]}
           {history.items.length > 0 && <span className="text-white/40">{history.items.length}</span>}
         </button>
-        <a
-          href="https://github.com/1AyaNabil1/Swan_Quote_Generator"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="text-white/60 hover:text-white transition-colors"
-          aria-label="View on GitHub"
+        <span
+          className="rounded-full border border-purple-primary/40 px-3 py-1 text-xs font-light text-white/70"
+          style={{ fontFamily: "'Poppins', 'Inter', sans-serif" }}
+          title={comped ? 'Your runs are on Zibby' : 'Your Zibby credits'}
         >
-          <svg
-            className="w-5 h-5 md:w-6 md:h-6"
-            fill="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path fillRule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z" clipRule="evenodd" />
-          </svg>
-        </a>
+          {comped ? 'Comped' : balance === null ? '—' : `${balance.toLocaleString('en-US')} cr`}
+        </span>
       </header>
 
       {/* Hero Section - Center */}
@@ -300,52 +337,16 @@ const QuoteGenerator = () => {
                     >
                       {MESSAGES.image[language]}
                     </button>
-                    <div className="relative">
-                      <button
-                        onClick={() => setShowShareMenu(!showShareMenu)}
-                        className="px-4 md:px-5 py-2 bg-purple-primary/20 hover:bg-purple-primary/30 border border-purple-primary/40 rounded-lg text-white text-xs md:text-sm font-light transition-all"
-                        style={{ fontFamily: language === 'ar' ? "'Cairo', sans-serif" : "'Poppins', 'Inter', sans-serif" }}
-                      >
-                        {language === 'ar' ? 'مشاركة الاقتباس' : 'Share Quote'}
-                      </button>
-                      {showShareMenu && (
-                        <div className="absolute bottom-full mb-2 left-0 bg-black/90 border border-purple-primary/40 rounded-lg overflow-hidden shadow-xl z-10 whitespace-nowrap">
-                          <button
-                            onClick={() => { handleShareQuote('x'); setShowShareMenu(false); }}
-                            className="w-full px-4 py-2.5 text-white text-xs md:text-sm font-light hover:bg-purple-primary/30 transition-all flex items-center gap-2 text-left"
-                            style={{ fontFamily: "'Poppins', 'Inter', sans-serif" }}
-                          >
-                            <svg className="w-4 h-4 flex-shrink-0" fill="currentColor" viewBox="0 0 24 24"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" /></svg>
-                            {language === 'ar' ? 'مشاركة على X' : 'Share on X'}
-                          </button>
-                          <button
-                            onClick={() => { handleShareQuote('facebook'); setShowShareMenu(false); }}
-                            className="w-full px-4 py-2.5 text-white text-xs md:text-sm font-light hover:bg-purple-primary/30 transition-all flex items-center gap-2 text-left"
-                            style={{ fontFamily: "'Poppins', 'Inter', sans-serif" }}
-                          >
-                            <svg className="w-4 h-4 flex-shrink-0" fill="currentColor" viewBox="0 0 24 24"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" /></svg>
-                            {language === 'ar' ? 'مشاركة على فيسبوك' : 'Share on Facebook'}
-                          </button>
-                          <button
-                            onClick={() => { handleShareQuote('whatsapp'); setShowShareMenu(false); }}
-                            className="w-full px-4 py-2.5 text-white text-xs md:text-sm font-light hover:bg-purple-primary/30 transition-all flex items-center gap-2 text-left"
-                            style={{ fontFamily: "'Poppins', 'Inter', sans-serif" }}
-                          >
-                            <svg className="w-4 h-4 flex-shrink-0" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" /></svg>
-                            {language === 'ar' ? 'مشاركة على واتساب' : 'WhatsApp'}
-                          </button>
-                          <button
-                            onClick={() => { handleShareQuote('native'); setShowShareMenu(false); }}
-                            className="w-full px-4 py-2.5 text-white text-xs md:text-sm font-light hover:bg-purple-primary/30 transition-all flex items-center gap-2 text-left border-t border-purple-primary/20"
-                            style={{ fontFamily: "'Poppins', 'Inter', sans-serif" }}
-                          >
-                            <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" /></svg>
-                            {language === 'ar' ? 'المزيد...' : 'More...'}
-                          </button>
-                        </div>
-                      )}
-                    </div>
+                    <button
+                      type="button"
+                      onClick={handleShareQuote}
+                      className="px-4 md:px-5 py-2 bg-purple-primary/20 hover:bg-purple-primary/30 border border-purple-primary/40 rounded-lg text-white text-xs md:text-sm font-light transition-all"
+                      style={{ fontFamily: language === 'ar' ? "'Cairo', sans-serif" : "'Poppins', 'Inter', sans-serif" }}
+                    >
+                      {language === 'ar' ? 'مشاركة الاقتباس' : 'Share Quote'}
+                    </button>
                   </div>
+                  {chargeNote}
                 </div>
               ) : (
                 <div className="text-center" dir={language === 'ar' ? 'rtl' : 'ltr'}>
@@ -358,6 +359,7 @@ const QuoteGenerator = () => {
                   >
                     {language === 'ar' ? 'سيظهر اقتباسك هنا...' : 'Your quote will appear here...'}
                   </p>
+                  {chargeNote}
                 </div>
               )}
             </div>
@@ -420,12 +422,13 @@ const QuoteGenerator = () => {
               </div>
 
               <button
-                onClick={handleGenerateQuote}
+                onClick={() => handleGenerateQuote()}
                 disabled={loading}
                 className="w-full px-6 py-2.5 md:py-3 bg-gradient-to-r from-purple-primary via-purple-accent to-purple-primary hover:from-purple-accent hover:via-purple-light hover:to-purple-accent rounded-full text-white text-sm font-medium shadow-lg shadow-purple-primary/30 hover:shadow-purple-light/70 hover:shadow-2xl hover:scale-[1.02] transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed mt-4 md:mt-6"
                 style={{ fontFamily: "'Poppins', 'Inter', sans-serif" }}
               >
                 {loading ? 'Generating...' : 'Generate Quote'}
+                {!loading && estimate && <span className="ml-2 text-xs font-light text-white/70">{estimate}</span>}
               </button>
             </div>
           </div>
@@ -458,17 +461,9 @@ const QuoteGenerator = () => {
 
       {/* Footer - Smaller on mobile */}
       <footer className="text-center pb-4 md:pb-6 flex-shrink-0">
+        {/* On Zibby no link may leave the app's frame, so the credit stays plain text. */}
         <p className="text-white/60 text-xs md:text-sm font-light" style={{ fontFamily: "'Poppins', 'Inter', sans-serif" }}>
-          Built by{' '}
-          <a
-            href="https://ayanabil.vercel.app/"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-purple-light hover:text-purple-accent transition-colors font-medium"
-          >
-            AyaNexus
-          </a>
-          {' '}🦢
+          Built by <span className="text-purple-light font-medium">AyaNexus</span> 🦢
         </p>
       </footer>
     </div >
